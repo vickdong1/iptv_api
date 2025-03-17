@@ -179,8 +179,8 @@ def updateChannelUrlsM3U(channels, template_channels):
             if announcement['name'] is None:
                 announcement['name'] = current_date
 
-    with open("live_ipv.m3u", "w", encoding="utf-8") as f_m3u, \
-            open("live_ipv.txt", "w", encoding="utf-8") as f_txt:
+    with open("live_iptv.m3u", "w", encoding="utf-8") as f_m3u, \
+            open("live_iptv.txt", "w", encoding="utf-8") as f_txt:
 
         f_m3u.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
 
