@@ -38,8 +38,8 @@ source_urls = [
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/YanG-1989/m3u/main/Gather.m3u",
     "https://iptv.b2og.com/txt/fmml_ipv6.txt",
     "http://175.178.251.183:6689/aktvlive.txt",
-    "http://xhztv.top/zbc.txt"
-    #"https://gh.tryxd.cn/https://raw.githubusercontent.com/SPX372928/MyIPTV/blob/master/黑龙江PLTV移动CDN版.txt",
+    "http://xhztv.top/zbc.txt",
+    "https://gh.tryxd.cn/https://raw.githubusercontent.com/SPX372928/MyIPTV/master/黑龙江PLTV移动CDN版.txt"
     #"https://gh.tryxd.cn/https://raw.githubusercontent.com/qingwen07/awesome-iptv/main/tvbox_live_all.txt",
     #"https://gh.tryxd.cn/https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/main/merged_output.m3u",
     #"https://live.zhoujie218.top/tv/iptv4.txt",
