@@ -171,7 +171,8 @@ def is_ipv6(url):
 
 def updateChannelUrlsM3U(channels, template_channels):
     # 更新频道URL到M3U和TXT文件中。
-    written_urls = set()
+    written_urls_ipv4 = set()
+    written_urls_ipv6 = set()
 
     current_date = datetime.now().strftime("%Y-%m-%d")
     for group in config.announcements:
@@ -179,30 +180,47 @@ def updateChannelUrlsM3U(channels, template_channels):
             if announcement['name'] is None:
                 announcement['name'] = current_date
 
-    with open("live_iptv.m3u", "w", encoding="utf-8") as f_m3u, \
-            open("live_iptv.txt", "w", encoding="utf-8") as f_txt:
+    with open("live_ipv4.m3u", "w", encoding="utf-8") as f_m3u_ipv4, \
+            open("live_ipv4.txt", "w", encoding="utf-8") as f_txt_ipv4, \
+            open("live_ipv6.m3u", "w", encoding="utf-8") as f_m3u_ipv6, \
+            open("live_ipv6.txt", "w", encoding="utf-8") as f_txt_ipv6:
 
-        f_m3u.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
+        f_m3u_ipv4.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
+        f_m3u_ipv6.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
 
         for group in config.announcements:
-            f_txt.write(f"{group['channel']},#genre#\n")
+            f_txt_ipv4.write(f"{group['channel']},#genre#\n")
+            f_txt_ipv6.write(f"{group['channel']},#genre#\n")
             for announcement in group['entries']:
-                f_m3u.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
-                f_m3u.write(f"{announcement['url']}\n")
-                f_txt.write(f"{announcement['name']},{announcement['url']}\n")
+                f_m3u_ipv4.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
+                f_m3u_ipv4.write(f"{announcement['url']}\n")
+                f_txt_ipv4.write(f"{announcement['name']},{announcement['url']}\n")
+                f_m3u_ipv6.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
+                f_m3u_ipv6.write(f"{announcement['url']}\n")
+                f_txt_ipv6.write(f"{announcement['name']},{announcement['url']}\n")
 
         for category, channel_list in template_channels.items():
-            f_txt.write(f"{category},#genre#\n")
+            f_txt_ipv4.write(f"{category},#genre#\n")
+            f_txt_ipv6.write(f"{category},#genre#\n")
             if category in channels:
                 for channel_name in channel_list:
                     if channel_name in channels[category]:
-                        sorted_urls = [url for url in sort_and_filter_urls(channels[category][channel_name], written_urls) if not is_ipv6(url)]
-                        total_urls = len(sorted_urls)
-                        for index, url in enumerate(sorted_urls, start=1):
-                            new_url = add_url_suffix(url, index, total_urls)
-                            write_to_files(f_m3u, f_txt, category, channel_name, index, new_url)
+                        sorted_urls_ipv4 = [url for url in sort_and_filter_urls(channels[category][channel_name], written_urls_ipv4) if not is_ipv6(url)]
+                        sorted_urls_ipv6 = [url for url in sort_and_filter_urls(channels[category][channel_name], written_urls_ipv6) if is_ipv6(url)]
 
-        f_txt.write("\n")
+                        total_urls_ipv4 = len(sorted_urls_ipv4)
+                        total_urls_ipv6 = len(sorted_urls_ipv6)
+
+                        for index, url in enumerate(sorted_urls_ipv4, start=1):
+                            new_url = add_url_suffix(url, index, total_urls_ipv4, "IPV4")
+                            write_to_files(f_m3u_ipv4, f_txt_ipv4, category, channel_name, index, new_url)
+
+                        for index, url in enumerate(sorted_urls_ipv6, start=1):
+                            new_url = add_url_suffix(url, index, total_urls_ipv6, "IPV6")
+                            write_to_files(f_m3u_ipv6, f_txt_ipv6, category, channel_name, index, new_url)
+
+        f_txt_ipv4.write("\n")
+        f_txt_ipv6.write("\n")
 
 
 def sort_and_filter_urls(urls, written_urls):
@@ -215,9 +233,9 @@ def sort_and_filter_urls(urls, written_urls):
     return filtered_urls
 
 
-def add_url_suffix(url, index, total_urls):
+def add_url_suffix(url, index, total_urls, ip_version):
     # 添加URL后缀。
-    suffix = f"$IPV4" if total_urls == 1 else f"$IPV4•线路{index}"
+    suffix = f"${ip_version}" if total_urls == 1 else f"${ip_version}•线路{index}"
     base_url = url.split('$', 1)[0] if '$' in url else url
     return f"{base_url}{suffix}"
 
