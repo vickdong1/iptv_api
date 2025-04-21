@@ -1,6 +1,10 @@
-ip_version_priority = "ipv6"
+"""
+全局配置文件
+包含数据源、过滤规则、测速参数、输出格式等配置
+"""
 
-source_urls = [
+# 基础配置
+SOURCE_URLS = [
     #"http://aktv.space/live.m3u",
     "http://92.112.21.169:30000/mytv.m3u",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/hostemail/cdn/main/live/tv.txt",
@@ -48,10 +52,11 @@ source_urls = [
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/qingwen07/awesome-iptv/main/tvbox_live_all.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/main/merged_output.m3u",
     "https://live.zhoujie218.top/tv/iptv4.txt"
+    # 添加更多数据源...
 ]
 
-url_blacklist = [
-    "epg.pw/stream/",
+URL_BLACKLIST = [
+   "epg.pw/stream/",
     "103.40.13.71:12390",
     "[2409:8087:1a01:df::4077]/PLTV/",
     "http://[2409:8087:1a01:df::7005]:80/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226419/index.m3u8",
@@ -86,19 +91,36 @@ url_blacklist = [
     "[2409:8087:2001:20:2800:0:df6e:eb27]"
 ]
 
-announcements = [
-    {
-        "channel": "更新日期",
-        "entries": [
-            {"name": None,"url": "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/yellow.gif","logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"}
-        ]
-    }
-]
+IP_VERSION_PRIORITY = ["ipv6", "ipv4"]  # IP版本优先级
 
-epg_urls = [
+EPG_URLS = [
     "https://epg.v1.mk/fy.xml",
     "http://epg.51zmt.top:8000/e.xml",
     "https://epg.pw/xmltv/epg_CN.xml",
     "https://epg.pw/xmltv/epg_HK.xml",
     "https://epg.pw/xmltv/epg_TW.xml"
 ]
+
+# 测速配置
+SPEED_TEST = {
+    "ENABLED": True,                # 是否启用测速
+    "TIMEOUT": 5,                   # 单次请求超时时间（秒）
+    "RETRY_TIMES": 3,               # 失败重试次数
+    "MAX_LATENCY": 1500,            # 最大允许延迟（毫秒）
+    "MIN_RESOLUTION": "720p",       # 最低分辨率要求
+    "CONCURRENCY_LIMIT": 100,       # 并发请求数限制
+}
+
+# 输出文件配置
+OUTPUT_DIR = "output"            # 输出目录
+M3U_TEMPLATE = """#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2560000,RESOLUTION=1920x1080
+"""
+
+# 频道分组配置（可从demo.txt动态加载）
+CHANNEL_GROUPS = {
+    "央视": ["CCTV-1", "CCTV-2", "CCTV-13"],
+    "卫视": ["湖南卫视", "浙江卫视", "东方卫视"],
+    "国际": ["BBC World", "CNN International"]
+}
