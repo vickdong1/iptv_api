@@ -1,11 +1,7 @@
-"""
-全局配置文件
-包含数据源、输出参数、测速配置等
-"""
+ip_version_priority = "ipv6"
 
-# === 基础配置 ===
-SOURCE_URLS = [
-     #"http://aktv.space/live.m3u",
+source_urls = [
+    #"http://aktv.space/live.m3u",
     "http://92.112.21.169:30000/mytv.m3u",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/hostemail/cdn/main/live/tv.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/JunTV/refs/heads/main/output/result.m3u",
@@ -52,10 +48,9 @@ SOURCE_URLS = [
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/qingwen07/awesome-iptv/main/tvbox_live_all.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/main/merged_output.m3u",
     "https://live.zhoujie218.top/tv/iptv4.txt"
-    # 添加更多数据源...
 ]
 
-URL_BLACKLIST = [
+url_blacklist = [
     "epg.pw/stream/",
     "103.40.13.71:12390",
     "[2409:8087:1a01:df::4077]/PLTV/",
@@ -91,38 +86,19 @@ URL_BLACKLIST = [
     "[2409:8087:2001:20:2800:0:df6e:eb27]"
 ]
 
-IP_VERSION_PRIORITY = ["IPV6", "IPV4"]  # 优先使用的IP版本
-
-ANNOUNCEMENTS = [
-    {"name": "公告频道", "url": "https://announcement.example.com"}
+announcements = [
+    {
+        "channel": "更新日期",
+        "entries": [
+            {"name": None,"url": "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/yellow.gif","logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"}
+        ]
+    }
 ]
 
-EPG_URLS = [
+epg_urls = [
     "https://epg.v1.mk/fy.xml",
     "http://epg.51zmt.top:8000/e.xml",
     "https://epg.pw/xmltv/epg_CN.xml",
     "https://epg.pw/xmltv/epg_HK.xml",
     "https://epg.pw/xmltv/epg_TW.xml"
 ]
-
-# === 测速配置 ===
-SPEED_TEST = {
-    "ENABLED": True,                # 启用测速
-    "TIMEOUT": 5,                   # 单次请求超时时间（秒）
-    "RETRY_TIMES": 3,               # 失败重试次数
-    "MAX_LATENCY": 1500,            # 最大允许延迟（毫秒）
-    "MIN_RESOLUTION": "720p",       # 最低分辨率要求
-    "CONCURRENT_LIMIT": 100         # 并发请求数限制
-}
-
-# === 输出文件配置 ===
-OUTPUT_DIR = "output"            # 输出目录
-OUTPUT_FILES = {                  # 新增输出文件配置
-    "M3U_IPV4": f"{OUTPUT_DIR}/live_ipv4.m3u",
-    "M3U_IPV6": f"{OUTPUT_DIR}/live_ipv6.m3u",
-    "TXT_IPV6": f"{OUTPUT_DIR}/live_info.txt"
-}
-
-# === 解析模板配置 ===
-TEMPLATE_FILE = "demo.txt"       # 频道模板文件路径
-LOGO_BASE_URL = "https://logo.example.com/"  # 频道logo基础URL
