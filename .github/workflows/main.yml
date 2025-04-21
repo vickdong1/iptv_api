@@ -2,51 +2,75 @@ name: Daily Update
 
 on:
   schedule:
-    - cron: '55 0 */2 * *' # 每2天凌晨00点55分执行任务，上海时区的UTC时间
-  #  允许手动触发工作流
+    - cron: '55 0 */2 * *' # 每2天凌晨00点55分执行任务（UTC时间，对应上海时区为08:55）
   workflow_dispatch:
     branches:
-      - main  # 仅在 main 分支上允许手动触发
+      - main # 仅允许在main分支手动触发工作流
 
 jobs:
   run_script:
-    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 运行器
-
+    name: 执行每日更新任务
+    runs-on: ubuntu-latest
+    environment: production
+    
     steps:
-    - name: Checkout repository  # 检出代码库到运行器中
-      uses: actions/checkout@v2
-
-    - name: Set up Python  # 设置 Python 环境
-      uses: actions/setup-python@v2
+    - name: 检出代码库
+      uses: actions/checkout@v4
       with:
-        python-version: '3.10'  # 使用 Python 版本 3.10
-
-    - name: Cache dependencies  # 缓存 pip 依赖项以加速后续构建
-      uses: actions/cache@v4
+        fetch-depth: 0 # 获取完整提交历史
+        
+    - name: 设置Python环境
+      uses: actions/setup-python@v5
       with:
-        path: ~/.cache/pip  # 依赖项的缓存路径
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}  # 生成缓存键
+        python-version: 3.10
+        architecture: x64
+        
+    - name: 缓存Python依赖
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          **/__pycache__
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-  # 如果完全匹配的 key 不存在，则尝试使用此恢复键
-
-    - name: Install dependencies  # 安装项目所需的 Python 包
+          ${{ runner.os }}-pip-
+          
+    - name: 安装依赖包
       run: |
-        pip install requests  # 安装 requests 库作为示例
-
-    - name: Run Python script  # 执行主脚本
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt  # 建议使用requirements.txt管理依赖
+        pip install aiohttp requests       # 显式安装项目所需库
+        
+    - name: 执行主脚本
       run: python main.py
-
-    - name: Commit and push if changed  # 如果有更改，则提交并推送
+      env:
+        LOG_LEVEL: INFO  # 可添加自定义环境变量
+        
+    - name: 配置Git用户信息
       run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git add -A  # 添加所有更改到暂存区
-        # 如果有更改被暂存，则创建并推送一个新的提交
-        if ! git diff --staged --quiet; then
-          git commit -m "Auto-update live files"  # 提交信息
-          git pull --rebase  # 拉取远程更新并变基
-          git push  # 推送更改到远程仓库
+        git config user.name "GitHub Actions Bot"
+        git config user.email "actions@bot.github.com"
+        git config --global user.signingkey "$GITHUB_ACTOR_ID"
+        
+    - name: 提交变更
+      run: |
+        CHANGED_FILES=$(git diff --staged --name-only | wc -w)
+        if [ $CHANGED_FILES -gt 0 ]; then
+          git add -A
+          git commit -m "chore: 自动更新直播源文件 [skip ci]"
+          git pull --rebase origin main  # 同步最新代码避免冲突
+          git push -u origin main --force-with-lease  # 安全推送变更
+        else
+          echo "没有检测到变更，跳过提交"
         fi
-
+        
+    - name: 清理缓存
+      uses: actions/delete-artifact@v3
+      if: always()
+      with:
+        name: dependency-cache
+        days-to-keep: 7
+        
     env:
-      TZ: Asia/Shanghai  # 设置环境变量，将时区设置为上海
+      TZ: Asia/Shanghai  # 设置上海时区
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 自动注入认证令牌
