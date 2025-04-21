@@ -1,10 +1,10 @@
 ip_version_priority = "ipv6"
 
 source_urls = [
-    "http://aktv.space/live.m3u",
+    #"http://aktv.space/live.m3u",
     "http://92.112.21.169:30000/mytv.m3u",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/hostemail/cdn/main/live/tv.txt",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/JunTV/refs/heads/main/output/result.txt",
+    "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/JunTV/refs/heads/main/output/result.m3u",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/ssili126/tv/main/itvlist.m3u",
     "https://live.zbds.top/tv/iptv4.txt",
     "https://gitee.com/xxy002/zhiboyuan/raw/master/dsy",   
