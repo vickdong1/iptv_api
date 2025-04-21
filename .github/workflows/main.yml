@@ -1,76 +1,39 @@
-name: Daily Update
+name: Auto IPTV Pipeline
 
 on:
   schedule:
-    - cron: '55 0 */2 * *' # 每2天凌晨00点55分执行任务（UTC时间，对应上海时区为08:55）
-  workflow_dispatch:
-    branches:
-      - main # 仅允许在main分支手动触发工作流
+    - cron: "0 4 * * *"  # 每天凌晨4点（UTC时间）
+  push:
+    branches: [ main ]
 
 jobs:
-  run_script:
-    name: 执行每日更新任务
+  build:
     runs-on: ubuntu-latest
-    environment: production
-    
     steps:
-    - name: 检出代码库
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0 # 获取完整提交历史
-        
-    - name: 设置Python环境
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3.10
-        architecture: x64
-        
-    - name: 缓存Python依赖
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/pip
-          **/__pycache__
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-          
-    - name: 安装依赖包
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt  # 建议使用requirements.txt管理依赖
-        pip install aiohttp requests       # 显式安装项目所需库
-        
-    - name: 执行主脚本
-      run: python main.py
-      env:
-        LOG_LEVEL: INFO  # 可添加自定义环境变量
-        
-    - name: 配置Git用户信息
-      run: |
-        git config user.name "GitHub Actions Bot"
-        git config user.email "actions@bot.github.com"
-        git config --global user.signingkey "$GITHUB_ACTOR_ID"
-        
-    - name: 提交变更
-      run: |
-        CHANGED_FILES=$(git diff --staged --name-only | wc -w)
-        if [ $CHANGED_FILES -gt 0 ]; then
-          git add -A
-          git commit -m "chore: 自动更新直播源文件 [skip ci]"
-          git pull --rebase origin main  # 同步最新代码避免冲突
-          git push -u origin main --force-with-lease  # 安全推送变更
-        else
-          echo "没有检测到变更，跳过提交"
-        fi
-        
-    - name: 清理缓存
-      uses: actions/delete-artifact@v3
-      if: always()
-      with:
-        name: dependency-cache
-        days-to-keep: 7
-        
-    env:
-      TZ: Asia/Shanghai  # 设置上海时区
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 自动注入认证令牌
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install aiohttp requests
+
+      - name: Run main script
+        run: python main.py
+
+      - name: Commit changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update IPTV channels [skip ci]"
+            git push
+          fi
