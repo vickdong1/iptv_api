@@ -1,7 +1,7 @@
+# 配置文件，包含直播源URL、黑名单URL、公告信息和EPG URL
 ip_version_priority = "ipv6"
 
 source_urls = [
-    #"http://aktv.space/live.m3u",
     "http://92.112.21.169:30000/mytv.m3u",
     "http://lisha521.dynv6.net.fh4u.org/tv.txt",
     "https://web.banye.tech:7777/tv/hlj.txt",
@@ -10,7 +10,7 @@ source_urls = [
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/JunTV/refs/heads/main/output/result.m3u",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/ssili126/tv/main/itvlist.m3u",
     "https://live.zbds.top/tv/iptv4.txt",
-    "https://gitee.com/xxy002/zhiboyuan/raw/master/dsy",   
+    "https://gitee.com/xxy002/zhiboyuan/raw/master/dsy",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/big-mouth-cn/tv/main/iptv-ok.m3u",
     "https://codeberg.org/alfredisme/mytvsources/raw/branch/main/mylist-ipv6.m3u",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/lalifeier/IPTV/main/m3u/IPTV.m3u",
@@ -35,7 +35,7 @@ source_urls = [
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/PizazzGY/TVBox_warehouse/main/live.txt",
     "https://fm1077.serv00.net/SmartTV.m3u",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/joevess/IPTV/main/home.m3u8",
-    "https://tv.youdu.fan:666/live/",  
+    "https://tv.youdu.fan:666/live/",
     "https://m3u.ibert.me/txt/o_cn.txt",
     "https://m3u.ibert.me/txt/j_iptv.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/xzw832/cmys/main/S_CCTV.txt",
@@ -93,7 +93,7 @@ announcements = [
     {
         "channel": "更新日期",
         "entries": [
-            {"name": None,"url": "https://gitlab.com/lr77/IPTV/-/raw/main/起风了.mp4","logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"}
+            {"name": None, "url": "https://gitlab.com/lr77/IPTV/-/raw/main/起风了.mp4", "logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"}
         ]
     }
 ]
