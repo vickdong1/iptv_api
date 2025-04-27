@@ -2,6 +2,9 @@
 ip_version_priority = "ipv6"
 
 source_urls = [
+    "https://gh.tryxd.cn/https://raw.githubusercontent.com/Alan-Alana/IPTV/refs/heads/main/channl.txt",
+    "https://gh.tryxd.cn/https://raw.githubusercontent.com/peterHchina/iptv/refs/heads/main/IPTV-V4.m3u",
+    "https://gh.tryxd.cn/https://raw.githubusercontent.com/peterHchina/iptv/refs/heads/main/IPTV-V6.m3u",
     "http://92.112.21.169:30000/mytv.m3u",
     "http://lisha521.dynv6.net.fh4u.org/tv.txt",
     "https://web.banye.tech:7777/tv/hlj.txt",
