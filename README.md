@@ -1,4 +1,32 @@
-# IPTV
+<div align="center">
+  <img src="./static/images/logo.png" alt="logo"/>
+  <h1 align="center">IPTV-API</h1>
+</div>
+
+<div align="center">一个可高度自定义的IPTV接口更新项目📺，自定义频道菜单，自动获取直播源，测速验效后生成可用的结果，可实现『✨秒播级体验🚀』</div>
+<br>
+<p align="center">
+  <a href="https://github.com/alantang1977/X/releases">
+    <img src="https://img.shields.io/github/v/release/alantang1977/X" />
+  </a>
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/python-%20%3D%203.13-47c219" />
+  </a>
+  <a href="https://github.com/alantang1977/X/releases">
+    <img src="https://img.shields.io/github/downloads/alantang1977/X/total" />
+  </a>
+  <a href="https://hub.docker.com/repository/docker/alantang1977/X">
+    <img src="https://img.shields.io/docker/pulls/alantang1977/X" />
+  </a>
+  <a href="https://github.com/alantang1977/X/fork">
+    <img src="https://img.shields.io/github/forks/alantang1977/X" />
+  </a>
+</p>
+
+[English](./README_en.md) | 中文
+
+
+
 通过抓取其它直播源集成一个总直播源，直播内容通过demo自定义进行运行爬取。每天自动更新直播、节目单，提供在线地址，可以在各大播放平台直接使用。M3U配置epg和台标，支持IPV6/4双栈访问!
 > 声明: 所有播放源均收集于互联网，仅供测试研究学习，`不得商用!`
 
