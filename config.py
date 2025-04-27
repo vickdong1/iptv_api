@@ -93,7 +93,7 @@ announcements = [
     {
         "channel": "更新日期",
         "entries": [
-            {"name": None,"url": "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/yellow.gif","logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"}
+            {"name": None,"url": "https://gitlab.com/lr77/IPTV/-/raw/main/起风了.mp4","logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"}
         ]
     }
 ]
