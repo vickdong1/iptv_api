@@ -6,20 +6,20 @@
 <div align="center">一个可高度自定义的IPTV接口更新项目📺，自定义频道菜单，自动获取直播源，测速验效后生成可用的结果，可实现『✨秒播级体验🚀』</div>
 <br>
 <p align="center">
-  <a href="https://github.com/alantang1977/X/releases">
-    <img src="https://img.shields.io/github/v/release/alantang1977/X" />
+  <a href="https://github.com/alantang1977/iptv_api/releases">
+    <img src="https://img.shields.io/github/v/release/alantang1977/iptv_api" />
   </a>
   <a href="https://www.python.org/">
     <img src="https://img.shields.io/badge/python-%20%3D%203.13-47c219" />
   </a>
-  <a href="https://github.com/alantang1977/X/releases">
-    <img src="https://img.shields.io/github/downloads/alantang1977/X/total" />
+  <a href="https://github.com/alantang1977/iptv_api/releases">
+    <img src="https://img.shields.io/github/downloads/alantang1977/iptv_api/total" />
   </a>
-  <a href="https://hub.docker.com/repository/docker/alantang1977/X">
-    <img src="https://img.shields.io/docker/pulls/alantang1977/X" />
+  <a href="https://github.com/alantang1977/iptv_api">
+    <img src="https://img.shields.io/github/stars/alantang1977/iptv_api" />
   </a>
-  <a href="https://github.com/alantang1977/X/fork">
-    <img src="https://img.shields.io/github/forks/alantang1977/X" />
+  <a href="https://github.com/alantang1977/iptv_api/fork">
+    <img src="https://img.shields.io/github/forks/alantang1977/iptv_api" />
   </a>
 </p>
 
