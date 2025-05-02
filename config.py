@@ -40,7 +40,7 @@ source_urls = [
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/PizazzGY/TVBox_warehouse/main/live.txt",
     "https://fm1077.serv00.net/SmartTV.m3u",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/joevess/IPTV/main/home.m3u8",
-    "https://tv.youdu.fan:666/live/",
+    "https://tv.iill.top/m3u/Gather",
     "https://m3u.ibert.me/txt/o_cn.txt",
     "https://m3u.ibert.me/txt/j_iptv.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/xzw832/cmys/main/S_CCTV.txt",
