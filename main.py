@@ -5,7 +5,6 @@ from collections import OrderedDict
 from datetime import datetime
 import config
 
-
 # 日志记录。
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler("function.log", "w", encoding="utf-8"), logging.StreamHandler()])
@@ -192,12 +191,19 @@ def updateChannelUrlsM3U(channels, template_channels):
             f_txt_ipv4.write(f"{group['channel']},#genre#\n")
             f_txt_ipv6.write(f"{group['channel']},#genre#\n")
             for announcement in group['entries']:
-                f_m3u_ipv4.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
-                f_m3u_ipv4.write(f"{announcement['url']}\n")
-                f_txt_ipv4.write(f"{announcement['name']},{announcement['url']}\n")
-                f_m3u_ipv6.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
-                f_m3u_ipv6.write(f"{announcement['url']}\n")
-                f_txt_ipv6.write(f"{announcement['name']},{announcement['url']}\n")
+                url = announcement['url']
+                if is_ipv6(url):
+                    if url not in written_urls_ipv6:
+                        written_urls_ipv6.add(url)
+                        f_m3u_ipv6.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
+                        f_m3u_ipv6.write(f"{url}\n")
+                        f_txt_ipv6.write(f"{announcement['name']},{url}\n")
+                else:
+                    if url not in written_urls_ipv4:
+                        written_urls_ipv4.add(url)
+                        f_m3u_ipv4.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
+                        f_m3u_ipv4.write(f"{url}\n")
+                        f_txt_ipv4.write(f"{announcement['name']},{url}\n")
 
         for category, channel_list in template_channels.items():
             f_txt_ipv4.write(f"{category},#genre#\n")
@@ -205,8 +211,17 @@ def updateChannelUrlsM3U(channels, template_channels):
             if category in channels:
                 for channel_name in channel_list:
                     if channel_name in channels[category]:
-                        sorted_urls_ipv4 = [url for url in sort_and_filter_urls(channels[category][channel_name], written_urls_ipv4) if not is_ipv6(url)]
-                        sorted_urls_ipv6 = [url for url in sort_and_filter_urls(channels[category][channel_name], written_urls_ipv6) if is_ipv6(url)]
+                        sorted_urls_ipv4 = []
+                        sorted_urls_ipv6 = []
+                        for url in channels[category][channel_name]:
+                            if is_ipv6(url):
+                                if url not in written_urls_ipv6:
+                                    sorted_urls_ipv6.append(url)
+                                    written_urls_ipv6.add(url)
+                            else:
+                                if url not in written_urls_ipv4:
+                                    sorted_urls_ipv4.append(url)
+                                    written_urls_ipv4.add(url)
 
                         total_urls_ipv4 = len(sorted_urls_ipv4)
                         total_urls_ipv6 = len(sorted_urls_ipv6)
