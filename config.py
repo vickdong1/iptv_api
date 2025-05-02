@@ -2,6 +2,7 @@
 ip_version_priority = "ipv6"
 
 source_urls = [
+    "http://api.mytv666.top/lives/free.php?type=txt",
     "http://zhibo.feylen.top/fltv/js/ku9live.php?tpye=fl.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/Alan-Alana/IPTV/refs/heads/main/channl.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/peterHchina/iptv/refs/heads/main/IPTV-V4.m3u",
