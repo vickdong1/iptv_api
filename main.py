@@ -5,6 +5,7 @@ from collections import OrderedDict
 from datetime import datetime
 import config
 import os
+import difflib
 
 # 日志记录。
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
@@ -35,14 +36,12 @@ def parse_template(template_file):
 
     return template_channels
 
-
 # 数据清洗函数
 def clean_channel_name(channel_name):
     cleaned_name = re.sub(r'[$「」-]', '', channel_name)  # 去掉中括号、«», 和'-'字符
     cleaned_name = re.sub(r'\s+', '', cleaned_name)  # 去掉所有空白字符
     cleaned_name = re.sub(r'(\D*)(\d+)', lambda m: m.group(1) + str(int(m.group(2))), cleaned_name)  # 将数字前面的部分保留，数字转换为整数
     return cleaned_name.upper()  # 转换为大写
-
 
 def fetch_channels(url):
     # 从指定URL抓取频道列表。
@@ -71,7 +70,6 @@ def fetch_channels(url):
 
     return channels
 
-
 def parse_m3u_lines(lines):
     # 解析M3U格式的频道列表行。
     channels = OrderedDict()
@@ -96,7 +94,6 @@ def parse_m3u_lines(lines):
                 channels[current_category].append((channel_name, channel_url))
 
     return channels
-
 
 def parse_txt_lines(lines):
     # 解析TXT格式的频道列表行。
@@ -127,22 +124,32 @@ def parse_txt_lines(lines):
 
     return channels
 
+def find_similar_name(target_name, name_list):
+    # 查找最相似的名称
+    matches = difflib.get_close_matches(target_name, name_list, n=1, cutoff=0.6)
+    return matches[0] if matches else None
 
 def match_channels(template_channels, all_channels):
     # 匹配模板中的频道与抓取到的频道。
     matched_channels = OrderedDict()
 
+    all_online_channel_names = []
+    for online_category, online_channel_list in all_channels.items():
+        for online_channel_name, _ in online_channel_list:
+            all_online_channel_names.append(online_channel_name)
+
     for category, channel_list in template_channels.items():
         matched_channels[category] = OrderedDict()
         for channel_name in channel_list:
-            for online_category, online_channel_list in all_channels.items():
-                for online_channel_name, online_channel_url in online_channel_list:
-                    if channel_name == online_channel_name:
-                        # 匹配成功的频道信息加入结果中
-                        matched_channels[category].setdefault(channel_name, []).append(online_channel_url)
+            similar_name = find_similar_name(channel_name, all_online_channel_names)
+            if similar_name:
+                for online_category, online_channel_list in all_channels.items():
+                    for online_channel_name, online_channel_url in online_channel_list:
+                        if online_channel_name == similar_name:
+                            # 匹配成功的频道信息加入结果中
+                            matched_channels[category].setdefault(channel_name, []).append(online_channel_url)
 
     return matched_channels
-
 
 def filter_source_urls(template_file):
     # 过滤源URL，获取匹配后的频道信息。
@@ -158,7 +165,6 @@ def filter_source_urls(template_file):
 
     return matched_channels, template_channels
 
-
 def merge_channels(target, source):
     # 合并两个频道字典。
     for category, channel_list in source.items():
@@ -167,11 +173,9 @@ def merge_channels(target, source):
         else:
             target[category] = channel_list
 
-
 def is_ipv6(url):
     # 判断URL是否为IPv6地址。
     return re.match(r'^http:\/\/\[[0-9a-fA-F:]+\]', url) is not None
-
 
 def updateChannelUrlsM3U(channels, template_channels):
     # 更新频道URL到M3U和TXT文件中。
@@ -247,7 +251,6 @@ def updateChannelUrlsM3U(channels, template_channels):
         f_txt_ipv4.write("\n")
         f_txt_ipv6.write("\n")
 
-
 def sort_and_filter_urls(urls, written_urls):
     # 排序和过滤URL。
     filtered_urls = [
@@ -257,13 +260,11 @@ def sort_and_filter_urls(urls, written_urls):
     written_urls.update(filtered_urls)
     return filtered_urls
 
-
 def add_url_suffix(url, index, total_urls, ip_version):
     # 添加URL后缀。
     suffix = f"${ip_version}" if total_urls == 1 else f"${ip_version}•线路{index}"
     base_url = url.split('$', 1)[0] if '$' in url else url
     return f"{base_url}{suffix}"
-
 
 def write_to_files(f_m3u, f_txt, category, channel_name, index, new_url):
     # 写入M3U和TXT文件。
@@ -271,7 +272,6 @@ def write_to_files(f_m3u, f_txt, category, channel_name, index, new_url):
     f_m3u.write(f"#EXTINF:-1 tvg-id=\"{index}\" tvg-name=\"{channel_name}\" tvg-logo=\"{logo_url}\" group-title=\"{category}\",{channel_name}\n")
     f_m3u.write(new_url + "\n")
     f_txt.write(f"{channel_name},{new_url}\n")
-
 
 if __name__ == "__main__":
     template_file = "demo.txt"
