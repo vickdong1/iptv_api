@@ -6,6 +6,7 @@ from datetime import datetime
 import config
 import os
 import difflib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 日志记录。
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
@@ -177,6 +178,30 @@ def is_ipv6(url):
     # 判断URL是否为IPv6地址。
     return re.match(r'^http:\/\/\[[0-9a-fA-F:]+\]', url) is not None
 
+def measure_response_time(url):
+    try:
+        start_time = datetime.now()
+        response = requests.head(url, timeout=config.timeout)
+        response.raise_for_status()
+        end_time = datetime.now()
+        return (end_time - start_time).total_seconds()
+    except requests.RequestException:
+        return float('inf')
+
+def sort_urls_by_response_time(urls):
+    with ThreadPoolExecutor(max_workers=config.max_workers) as executor:
+        future_to_url = {executor.submit(measure_response_time, url): url for url in urls}
+        results = []
+        for future in as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                response_time = future.result()
+                results.append((url, response_time))
+            except Exception as exc:
+                logging.error(f'{url} generated an exception: {exc}')
+        results.sort(key=lambda x: x[1])
+        return [url for url, _ in results]
+
 def updateChannelUrlsM3U(channels, template_channels):
     # 更新频道URL到M3U和TXT文件中。
     written_urls_ipv4 = set()
@@ -225,9 +250,11 @@ def updateChannelUrlsM3U(channels, template_channels):
             if category in channels:
                 for channel_name in channel_list:
                     if channel_name in channels[category]:
+                        urls = channels[category][channel_name]
+                        sorted_urls = sort_urls_by_response_time(urls)
                         sorted_urls_ipv4 = []
                         sorted_urls_ipv6 = []
-                        for url in channels[category][channel_name]:
+                        for url in sorted_urls:
                             if is_ipv6(url):
                                 if url not in written_urls_ipv6:
                                     sorted_urls_ipv6.append(url)
