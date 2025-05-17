@@ -3,12 +3,6 @@
 # 优先使用的IP版本，这里设置为ipv6
 ip_version_priority = "ipv6"
 
-# 测速超时时间（秒）
-timeout = 5
-
-# 线程池最大工作线程数
-max_workers = 10
-
 # 直播源URL列表
 source_urls = [
     "http://api.mytv666.top/lives/free.php?type=txt",
@@ -105,7 +99,7 @@ announcements = [
         "entries": [
             {
                 "name": None,
-                "url": "https://gitlab.com/lr77/IPTV/-/raw/main/起风了.mp4",
+                "url": "https://codeberg.org/alantang/photo/raw/branch/main/Robot.mp4",
                 "logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"
             }
         ]
