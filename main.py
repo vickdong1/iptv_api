@@ -4,11 +4,16 @@ import logging
 from collections import OrderedDict
 from datetime import datetime
 import config
+import os
 
 # 日志记录。
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler("function.log", "w", encoding="utf-8"), logging.StreamHandler()])
 
+# 确保 output 文件夹存在
+output_folder = "output"
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
 
 def parse_template(template_file):
     # 解析模板文件，提取频道分类和频道名称。
@@ -179,10 +184,15 @@ def updateChannelUrlsM3U(channels, template_channels):
             if announcement['name'] is None:
                 announcement['name'] = current_date
 
-    with open("live_ipv4.m3u", "w", encoding="utf-8") as f_m3u_ipv4, \
-            open("live_ipv4.txt", "w", encoding="utf-8") as f_txt_ipv4, \
-            open("live_ipv6.m3u", "w", encoding="utf-8") as f_m3u_ipv6, \
-            open("live_ipv6.txt", "w", encoding="utf-8") as f_txt_ipv6:
+    ipv4_m3u_path = os.path.join(output_folder, "live_ipv4.m3u")
+    ipv4_txt_path = os.path.join(output_folder, "live_ipv4.txt")
+    ipv6_m3u_path = os.path.join(output_folder, "live_ipv6.m3u")
+    ipv6_txt_path = os.path.join(output_folder, "live_ipv6.txt")
+
+    with open(ipv4_m3u_path, "w", encoding="utf-8") as f_m3u_ipv4, \
+            open(ipv4_txt_path, "w", encoding="utf-8") as f_txt_ipv4, \
+            open(ipv6_m3u_path, "w", encoding="utf-8") as f_m3u_ipv6, \
+            open(ipv6_txt_path, "w", encoding="utf-8") as f_txt_ipv6:
 
         f_m3u_ipv4.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
         f_m3u_ipv6.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
