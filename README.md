@@ -3,7 +3,7 @@
   <h1 align="center">IPTV自动获取更新直播源</h1>
 </div>
 
-<div align="center">一个可高度自定义的IPTV接口更新项目📺，自定义频道菜单，自动获取直播源，测速验效后生成可用的结果，可实现『✨秒播级体验🚀』</div>
+<div align="center">使用AI生成一个可高度自定义的IPTV接口更新项目📺，自定义频道菜单，自动获取直播源，测速验效后生成可用的结果，M3U配置epg和台标，支持IPV6/4双栈访问!可实现『✨秒播级体验🚀』</div>
 <br>
 <p align="center">
   <a href="https://github.com/alantang1977/iptv_api/releases">
@@ -25,23 +25,21 @@
 
 [English](./README_en.md) | 中文
 
-
-
 通过抓取其它直播源集成一个总直播源，直播内容通过demo自定义进行运行爬取。每天自动更新直播、节目单，提供在线地址，可以在各大播放平台直接使用。M3U配置epg和台标，支持IPV6/4双栈访问!
 > 声明: 所有播放源均收集于互联网，仅供测试研究学习，`不得商用!`
 
 ## 订阅链接:        
-> [IPV4直播加速URL1](https://gh.tryxd.cn/https://raw.githubusercontent.com/XlllllX/IPTV/main/live_ipv4.m3u)
+> [IPV4直播加速URL1](https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/live_ipv4.m3u)
 > 
-> [IPV4直播加速URL2](https://gh.llkk.cc/https://github.com/XlllllX/IPTV/blob/main/live_ipv4.m3u)
+> [IPV4直播加速URL2](https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/live_ipv4.m3u)
 > 
-> [IPV6直播加速URL1](https://gh.tryxd.cn/https://raw.githubusercontent.com/XlllllX/IPTV/main/live_ipv6.m3u)
+> [IPV6直播加速URL1](https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/live_ipv6.m3u)
 > 
-> [IPV6直播加速URL2](https://gh.llkk.cc/https://github.com/XlllllX/IPTV/blob/main/live_ipv6.m3u)
+> [IPV6直播加速URL2](https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/live_ipv6.m3u)
 >
-> [节目单加速URL1](https://gh.tryxd.cn/https://raw.githubusercontent.com/XlllllX/IPTV/main/epg.xml)
+> [节目单加速URL1](https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/epg.xml)
 > 
-> [节目单加速URL2](https://gh.llkk.cc/https://github.com/XlllllX/IPTV/blob/main/epg.xml)
+> [节目单加速URL2](https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/epg.xml)
 
 ## IPV6优势
 1. 更低的延迟: IPv6协议在一些方面能提供更低的延迟，这对于实时视频流的播放体验很重要，可以减少视频缓冲和加载时间。
