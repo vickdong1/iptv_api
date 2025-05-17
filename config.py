@@ -1,6 +1,15 @@
-# 配置文件，包含直播源URL、黑名单URL、公告信息和EPG URL
+# 配置文件，包含直播源URL、黑名单URL、公告信息、EPG URL、测速超时时间和线程池最大工作线程数
+
+# 优先使用的IP版本，这里设置为ipv6
 ip_version_priority = "ipv6"
 
+# 测速超时时间（秒）
+timeout = 5
+
+# 线程池最大工作线程数
+max_workers = 10
+
+# 直播源URL列表
 source_urls = [
     "http://api.mytv666.top/lives/free.php?type=txt",
     "http://zhibo.feylen.top/fltv/js/ku9live.php?tpye=fl.txt",
@@ -58,18 +67,13 @@ source_urls = [
     "https://live.zhoujie218.top/tv/iptv4.txt"
 ]
 
+# 直播源黑名单URL列表，去除了重复项
 url_blacklist = [
     "epg.pw/stream/",
     "103.40.13.71:12390",
     "[2409:8087:1a01:df::4077]/PLTV/",
     "http://[2409:8087:1a01:df::7005]:80/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226419/index.m3u8",
-    "http://[2409:8087:1a01:df::7005]:80/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226419/index.m3u8",
-    "http://[2409:8087:1a01:df::7005]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226419/index.m3u8",
-    "http://[2409:8087:1a01:df::7005]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226419/index.m3u8",
-    "http://[2409:8087:1a01:df::7005]:80/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226419/index.m3u8",
     "http://[2409:8087:5e00:24::1e]:6060/000000001000/1000000006000233001/1.m3u8",
-    "http://[2409:8087:1a01:df::7005]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226419/index.m3u8",
-    "http://[2409:8087:1a01:df::7005]:80/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226419/index.m3u8",
     "8.210.140.75:68",
     "154.12.50.54",
     "yinhe.live_hls.zte.com",
@@ -94,15 +98,21 @@ url_blacklist = [
     "[2409:8087:2001:20:2800:0:df6e:eb27]"
 ]
 
+# 公告信息
 announcements = [
     {
         "channel": "更新日期",
         "entries": [
-            {"name": None, "url": "https://gitlab.com/lr77/IPTV/-/raw/main/起风了.mp4", "logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"}
+            {
+                "name": None,
+                "url": "https://gitlab.com/lr77/IPTV/-/raw/main/起风了.mp4",
+                "logo": "https://codeberg.org/alantang/photo/raw/branch/main/ChatGPTImage.png"
+            }
         ]
     }
 ]
 
+# EPG（电子节目指南）URL列表
 epg_urls = [
     "https://epg.v1.mk/fy.xml",
     "http://epg.51zmt.top:8000/e.xml",
