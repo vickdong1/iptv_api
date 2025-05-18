@@ -99,8 +99,8 @@ announcements = [
         "entries": [
             {
                 "name": None,
-                "url": "https://raw.githubusercontent.com/alantang1977/X/main/Pictures/Robot.mp4",
-                "logo": "https://raw.githubusercontent.com/alantang1977/X/main/Pictures/TangImage320.png"
+                "url": "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/Robot.mp4",
+                "logo": "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/TangImage320.png"
             }
         ]
     }
