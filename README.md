@@ -31,6 +31,8 @@
 ## 订阅链接:        
 > [IPV4直播加速URL1](https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/live_ipv4.m3u)
 > 
+>[IPV4直播加速CDN](https://cdn.jsdelivr.net/gh/alantang1977/iptv_api@master/output/live_ipv4.m3u)
+> 
 > [IPV4直播加速URL2](https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/live_ipv4.m3u)
 > 
 > [IPV6直播加速URL1](https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/live_ipv6.m3u)
