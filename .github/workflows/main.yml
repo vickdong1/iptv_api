@@ -2,51 +2,78 @@ name: Daily Update
 
 on:
   schedule:
-    - cron: '55 0 */2 * *' # 每2天凌晨00点55分执行任务，上海时区的UTC时间
-  #  允许手动触发工作流
+    - cron: '55 0 */2 * *'  # 每2天凌晨00点55分执行任务（UTC时间）
   workflow_dispatch:
     branches:
-      - main  # 仅在 main 分支上允许手动触发
+      - main  # 仅在main分支上允许手动触发
 
 jobs:
   run_script:
-    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 运行器
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository  # 检出代码库到运行器中
-      uses: actions/checkout@v2
-
-    - name: Set up Python  # 设置 Python 环境
-      uses: actions/setup-python@v2
+    - name: Checkout repository
+      uses: actions/checkout@v4
       with:
-        python-version: '3.10'  # 使用 Python 版本 3.10
+        persist-credentials: false
+        fetch-depth: 0  # 获取完整的提交历史
 
-    - name: Cache dependencies  # 缓存 pip 依赖项以加速后续构建
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Cache dependencies
       uses: actions/cache@v4
       with:
-        path: ~/.cache/pip  # 依赖项的缓存路径
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}  # 生成缓存键
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-  # 如果完全匹配的 key 不存在，则尝试使用此恢复键
+          ${{ runner.os }}-pip-
 
-    - name: Install dependencies  # 安装项目所需的 Python 包
+    - name: Install FFmpeg
       run: |
-        pip install requests  # 安装 requests 库作为示例
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+      continue-on-error: true  # 如果安装失败，继续执行
 
-    - name: Run Python script  # 执行主脚本
-      run: python main.py
-
-    - name: Commit and push if changed  # 如果有更改，则提交并推送
+    - name: Install dependencies
       run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git add -A  # 添加所有更改到暂存区
-        # 如果有更改被暂存，则创建并推送一个新的提交
-        if ! git diff --staged --quiet; then
-          git commit -m "Auto-update live files"  # 提交信息
-          git pull --rebase  # 拉取远程更新并变基
-          git push  # 推送更改到远程仓库
-        fi
+        python -m pip install --upgrade pip
+        pip install requests difflib
 
-    env:
-      TZ: Asia/Shanghai  # 设置环境变量，将时区设置为上海
+    - name: Run Python script
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TZ: Asia/Shanghai  # 设置时区为上海
+      run: |
+        python main.py
+
+    - name: Upload output files as artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: output-files
+        path: output/
+        retention-days: 7  # 保留7天
+
+    - name: Commit and push if changed
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: 'Auto-update: $(date +%Y-%m-%d %H:%M:%S)'
+        add: 'output/'
+        push: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Send notification on failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 Daily Update Workflow Failed',
+            body: 'The daily update workflow failed. Please check the logs: ' + process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/actions/runs/' + process.env.GITHUB_RUN_ID,
+            labels: ['bug']
+          })
