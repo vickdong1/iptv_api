@@ -1,27 +1,38 @@
 import re
 import requests
 import logging
+import subprocess
+import shutil
+import time
+import asyncio
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 import config
 import os
 import difflib
-import time
-from concurrent.futures import ThreadPoolExecutor
+import platform
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 
 # 确保 output 文件夹存在
 output_folder = "output"
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
+os.makedirs(output_folder, exist_ok=True)
 
 # 日志记录，将日志文件保存到 output 文件夹下
 log_file_path = os.path.join(output_folder, "function.log")
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler(log_file_path, "w", encoding="utf-8"), logging.StreamHandler()])
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file_path, "a", encoding="utf-8"),
+        logging.StreamHandler()
+    ]
+)
 
-# 测速超时时间（秒）
+# 测速配置
 TEST_TIMEOUT = config.TEST_TIMEOUT
+TEST_ATTEMPTS = getattr(config, 'TEST_ATTEMPTS', 3)
+MAX_WORKERS = config.MAX_WORKERS
 
 def parse_template(template_file):
     """解析模板文件，提取频道分类和频道名称"""
@@ -176,22 +187,34 @@ def is_ipv6(url):
     """判断URL是否为IPv6地址"""
     return re.match(r'^http:\/\/\[[0-9a-fA-F:]+\]', url) is not None
 
+def has_ffmpeg():
+    """检查系统是否安装了FFmpeg"""
+    return shutil.which('ffmpeg') is not None
+
 def test_stream_speed(url):
-    """测试直播源速度"""
+    """测试直播源速度，优先使用FFmpeg"""
+    if has_ffmpeg():
+        return test_stream_speed_ffmpeg(url)
+    else:
+        logging.warning(f"未找到FFmpeg，使用默认测速方法: {url}")
+        return test_stream_speed_default(url)
+
+def test_stream_speed_default(url):
+    """使用requests库测试直播源速度"""
     try:
         start_time = time.time()
-        response = requests.get(url, stream=True, timeout=TEST_TIMEOUT)
-        response.raise_for_status()
-        
-        bytes_received = 0
-        test_duration = 2  # 测试2秒
-        end_time = start_time + test_duration
-        
-        for chunk in response.iter_content(chunk_size=1024):
-            if chunk:
-                bytes_received += len(chunk)
-                if time.time() > end_time:
-                    break
+        with requests.get(url, stream=True, timeout=TEST_TIMEOUT) as response:
+            response.raise_for_status()
+            
+            bytes_received = 0
+            test_duration = 3  # 测试3秒
+            end_time = start_time + test_duration
+            
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    bytes_received += len(chunk)
+                    if time.time() > end_time:
+                        break
         
         elapsed = time.time() - start_time
         speed = bytes_received / elapsed / 1024  # KB/s
@@ -201,14 +224,109 @@ def test_stream_speed(url):
             'speed': speed,
             'status': 'success',
             'elapsed': elapsed,
-            'size': bytes_received
+            'size': bytes_received,
+            'method': 'requests'
         }
     except Exception as e:
         return {
             'url': url,
             'speed': 0,
             'status': 'failed',
-            'error': str(e)
+            'error': str(e),
+            'method': 'requests'
+        }
+
+def test_stream_speed_ffmpeg(url):
+    """使用FFmpeg测试直播源速度"""
+    try:
+        # 构建FFmpeg命令
+        cmd = [
+            'ffmpeg',
+            '-i', url,
+            '-t', '5',  # 测试5秒
+            '-f', 'null',
+            '-'
+        ]
+        
+        # 执行命令并捕获输出
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        
+        stdout, stderr = process.communicate(timeout=TEST_TIMEOUT + 5)
+        return_code = process.returncode
+        
+        if return_code != 0:
+            raise Exception(f"FFmpeg返回非零退出码: {return_code}")
+        
+        # 提取比特率信息
+        bitrate_match = re.search(r'bitrate: (\d+\.\d+) kb/s', stderr)
+        if bitrate_match:
+            bitrate = float(bitrate_match.group(1))
+            speed_kb_s = bitrate / 8  # 转换为KB/s
+            
+            return {
+                'url': url,
+                'speed': speed_kb_s,
+                'status': 'success',
+                'method': 'ffmpeg',
+                'output': stderr[:500]  # 保留部分输出用于调试
+            }
+        else:
+            # 尝试从总大小估算
+            size_match = re.search(r'(\d+\.\d+ \w+) in', stderr)
+            if size_match:
+                size_str = size_match.group(1)
+                size_parts = size_str.split()
+                size = float(size_parts[0])
+                unit = size_parts[1]
+                
+                # 转换为KB
+                if unit == 'kB':
+                    size_kb = size
+                elif unit == 'MB':
+                    size_kb = size * 1024
+                else:
+                    size_kb = size / 1024
+                
+                speed_kb_s = size_kb / 5  # 假设测试了5秒
+                
+                return {
+                    'url': url,
+                    'speed': speed_kb_s,
+                    'status': 'success',
+                    'method': 'ffmpeg (estimated)',
+                    'output': stderr[:500]
+                }
+            
+            logging.warning(f"无法从FFmpeg输出中提取比特率: {url}")
+            return {
+                'url': url,
+                'speed': 0,
+                'status': 'failed',
+                'error': '无法提取比特率',
+                'output': stderr[:500]
+            }
+            
+    except subprocess.TimeoutExpired:
+        return {
+            'url': url,
+            'speed': 0,
+            'status': 'failed',
+            'error': f'FFmpeg测试超时 ({TEST_TIMEOUT}秒)',
+            'method': 'ffmpeg'
+        }
+    except Exception as e:
+        logging.error(f"FFmpeg测速异常: {url} - {str(e)}")
+        return {
+            'url': url,
+            'speed': 0,
+            'status': 'failed',
+            'error': str(e),
+            'method': 'ffmpeg'
         }
 
 def batch_test_stream_speeds(urls):
@@ -216,19 +334,21 @@ def batch_test_stream_speeds(urls):
     logging.info(f"开始多线程测速，共{len(urls)}个直播源")
     results = []
     
-    with ThreadPoolExecutor(max_workers=config.MAX_WORKERS) as executor:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         future_to_url = {executor.submit(test_stream_speed, url): url for url in urls}
         
-        for future in future_to_url:
+        for future in as_completed(future_to_url):
+            url = future_to_url[future]
             try:
                 result = future.result()
                 results.append(result)
                 if result['status'] == 'success':
-                    logging.info(f"测速成功: {result['url']} - {result['speed']:.2f} KB/s")
+                    method = result.get('method', 'unknown')
+                    logging.info(f"测速成功 ({method}): {result['url']} - {result['speed']:.2f} KB/s")
                 else:
                     logging.warning(f"测速失败: {result['url']} - {result.get('error', '未知错误')}")
             except Exception as e:
-                logging.error(f"测速异常: {future_to_url[future]} - {str(e)}")
+                logging.error(f"测速异常: {url} - {str(e)}")
     
     # 按速度排序（降序）
     return sorted(results, key=lambda x: x['speed'], reverse=True)
@@ -247,17 +367,22 @@ def updateChannelUrlsM3U(channels, template_channels):
     
     # 去重后进行测速
     unique_urls = list(set(all_urls))
+    logging.info(f"共发现{len(unique_urls)}个唯一直播源URL，开始测速...")
+    
+    # 执行多线程测速
     speed_results = batch_test_stream_speeds(unique_urls)
     
     # 构建URL到速度的映射
     url_speed_map = {result['url']: result['speed'] for result in speed_results}
     
+    # 生成当前日期
     current_date = datetime.now().strftime("%Y-%m-%d")
     for group in config.announcements:
         for announcement in group['entries']:
             if announcement['name'] is None:
                 announcement['name'] = current_date
 
+    # 定义输出文件路径
     ipv4_m3u_path = os.path.join(output_folder, "live_ipv4.m3u")
     ipv4_txt_path = os.path.join(output_folder, "live_ipv4.txt")
     ipv6_m3u_path = os.path.join(output_folder, "live_ipv6.m3u")
@@ -269,19 +394,23 @@ def updateChannelUrlsM3U(channels, template_channels):
         f_speed.write("直播源测速结果（按速度降序排列）:\n")
         f_speed.write("=" * 80 + "\n")
         for result in speed_results:
+            method = result.get('method', 'unknown')
             if result['status'] == 'success':
-                f_speed.write(f"{result['speed']:>8.2f} KB/s | {result['url']}\n")
+                f_speed.write(f"{result['speed']:>8.2f} KB/s | {method:15} | {result['url']}\n")
             else:
-                f_speed.write(f"{'FAILED':>8} | {result['url']} ({result.get('error', '未知错误')})\n")
+                f_speed.write(f"{'FAILED':>8} | {method:15} | {result['url']} ({result.get('error', '未知错误')})\n")
 
+    # 写入M3U和TXT文件
     with open(ipv4_m3u_path, "w", encoding="utf-8") as f_m3u_ipv4, \
             open(ipv4_txt_path, "w", encoding="utf-8") as f_txt_ipv4, \
             open(ipv6_m3u_path, "w", encoding="utf-8") as f_m3u_ipv6, \
             open(ipv6_txt_path, "w", encoding="utf-8") as f_txt_ipv6:
 
+        # 写入M3U头部
         f_m3u_ipv4.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
         f_m3u_ipv6.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
 
+        # 写入公告信息
         for group in config.announcements:
             f_txt_ipv4.write(f"{group['channel']},#genre#\n")
             f_txt_ipv6.write(f"{group['channel']},#genre#\n")
@@ -304,6 +433,7 @@ def updateChannelUrlsM3U(channels, template_channels):
                         f_m3u_ipv4.write(f"{url}\n")
                         f_txt_ipv4.write(f"{announcement['name']},{url}\n")
 
+        # 写入频道信息
         for category, channel_list in template_channels.items():
             f_txt_ipv4.write(f"{category},#genre#\n")
             f_txt_ipv6.write(f"{category},#genre#\n")
@@ -317,6 +447,7 @@ def updateChannelUrlsM3U(channels, template_channels):
                         ]
                         urls_with_speed.sort(key=lambda x: x[1], reverse=True)
                         
+                        # 分离IPv4和IPv6地址
                         sorted_urls_ipv4 = []
                         sorted_urls_ipv6 = []
                         
@@ -330,17 +461,19 @@ def updateChannelUrlsM3U(channels, template_channels):
                                     sorted_urls_ipv4.append((url, speed))
                                     written_urls_ipv4.add(url)
 
+                        # 写入IPv4频道
                         total_urls_ipv4 = len(sorted_urls_ipv4)
-                        total_urls_ipv6 = len(sorted_urls_ipv6)
-
                         for index, (url, speed) in enumerate(sorted_urls_ipv4, start=1):
                             new_url = add_url_suffix(url, index, total_urls_ipv4, "IPV4", speed)
                             write_to_files(f_m3u_ipv4, f_txt_ipv4, category, channel_name, index, new_url, speed)
 
+                        # 写入IPv6频道
+                        total_urls_ipv6 = len(sorted_urls_ipv6)
                         for index, (url, speed) in enumerate(sorted_urls_ipv6, start=1):
                             new_url = add_url_suffix(url, index, total_urls_ipv6, "IPV6", speed)
                             write_to_files(f_m3u_ipv6, f_txt_ipv6, category, channel_name, index, new_url, speed)
 
+        # 添加文件结束标记
         f_txt_ipv4.write("\n")
         f_txt_ipv6.write("\n")
 
@@ -359,9 +492,47 @@ def write_to_files(f_m3u, f_txt, category, channel_name, index, new_url, speed):
     f_m3u.write(new_url + "\n")
     f_txt.write(f"{channel_name},{new_url}\n")
 
+def create_github_commit():
+    """创建GitHub提交并推送更新"""
+    try:
+        # 添加所有更改
+        subprocess.run(["git", "add", "output/"], check=True)
+        
+        # 检查是否有更改
+        result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+        if not result.stdout.strip():
+            logging.info("没有检测到更改，跳过提交")
+            return False
+        
+        # 提交更改
+        commit_message = f"自动更新: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        subprocess.run(["git", "commit", "-m", commit_message], check=True)
+        
+        # 推送更改
+        subprocess.run(["git", "push"], check=True)
+        
+        logging.info("已成功将更新推送到GitHub")
+        return True
+    except subprocess.CalledProcessError as e:
+        logging.error(f"GitHub提交失败: {e}")
+        return False
+
 if __name__ == "__main__":
     template_file = "demo.txt"
-    logging.info("开始处理直播源...")
+    logging.info(f"开始处理直播源...")
+    logging.info(f"系统信息: {platform.platform()}")
+    logging.info(f"Python版本: {platform.python_version()}")
+    
+    if has_ffmpeg():
+        # 获取FFmpeg版本
+        try:
+            result = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
+            ffmpeg_version = result.stdout.split('\n')[0]
+            logging.info(f"FFmpeg已安装: {ffmpeg_version}")
+        except Exception as e:
+            logging.warning(f"无法获取FFmpeg版本: {e}")
+    else:
+        logging.warning("未找到FFmpeg，测速功能将使用替代方法")
     
     # 过滤并匹配频道
     channels, template_channels = filter_source_urls(template_file)
@@ -370,3 +541,10 @@ if __name__ == "__main__":
     updateChannelUrlsM3U(channels, template_channels)
     
     logging.info("处理完成，所有文件已保存到output文件夹")
+    
+    # 检查是否在GitHub Actions环境中运行
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        logging.info("在GitHub Actions环境中运行，准备提交更新...")
+        create_github_commit()
+    else:
+        logging.info("不在GitHub Actions环境中，跳过自动提交")
