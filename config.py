@@ -114,3 +114,8 @@ epg_urls = [
     "https://epg.pw/xmltv/epg_HK.xml",
     "https://epg.pw/xmltv/epg_TW.xml"
 ]
+# 测速超时时间（秒）
+TEST_TIMEOUT = 10
+
+# 测速线程池最大工作线程数
+MAX_WORKERS = 20
