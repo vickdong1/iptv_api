@@ -192,9 +192,9 @@ def update_channel_urls_m3u(channels: OrderedDict, template_channels: OrderedDic
          open(ipv6_m3u_path, "w", encoding="utf-8") as f_m3u_ipv6, \
          open(ipv6_txt_path, "w", encoding="utf-8") as f_txt_ipv6:
 
-        # 修复：使用双引号包裹整个f-string，内部使用单引号
-        f_m3u_ipv4.write(f"#EXTM3U x-tvg-url='{','.join(f'\"{epg_url}\"' for epg_url in config.epg_urls)}'\n")
-        f_m3u_ipv6.write(f"#EXTM3U x-tvg-url='{','.join(f'\"{epg_url}\"' for epg_url in config.epg_urls)}'\n")
+        # 修复：使用单引号包裹内部字符串，避免转义字符
+        f_m3u_ipv4.write(f"#EXTM3U x-tvg-url='{','.join([f'"{epg_url}"' for epg_url in config.epg_urls])}'\n")
+        f_m3u_ipv6.write(f"#EXTM3U x-tvg-url='{','.join([f'"{epg_url}"' for epg_url in config.epg_urls])}'\n")
 
         # 写入公告频道
         for group in config.announcements:
