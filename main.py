@@ -174,7 +174,6 @@ def update_channel_urls_m3u(channels: OrderedDict, template_channels: OrderedDic
          open(ipv6_m3u_path, "w", encoding="utf-8") as f_m3u_ipv6, \
          open(ipv6_txt_path, "w", encoding="utf-8") as f_txt_ipv6:
 
-        # 修正f-string语法错误，避免嵌套
         epg_urls_str = ",".join([f'"{epg_url}"' for epg_url in config.epg_urls])
         f_m3u_ipv4.write(f"#EXTM3U x-tvg-url={epg_urls_str}\n")
         f_m3u_ipv6.write(f"#EXTM3U x-tvg-url={epg_urls_str}\n")
@@ -236,7 +235,10 @@ def test_url_ffmpeg(url: str) -> float:
         command = f'ffmpeg -i "{url}" -v error -t 1 -f null - 2>&1 | grep -oP "(?<=time=)[^ ]+"'
         result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
         if result.returncode == 0 and result.stdout:
-            return float(result.stdout.strip())
+            try:
+                return float(result.stdout.strip())
+            except Exception:
+                return None
         else:
             logging.error(f"URL: {url}, FFmpeg测试失败: {result.stderr.strip()}")
             return None
@@ -262,14 +264,18 @@ async def test_all_urls(channels: OrderedDict) -> None:
             'aiohttp_time': aiohttp_time,
             'ffmpeg_time': ffmpeg_time
         })
-        logging.info(f"URL: {url}, aiohttp响应时间: {aiohttp_time:.2f}s, FFmpeg响应时间: {ffmpeg_time:.2f}s")
+        aiohttp_disp = f"{aiohttp_time:.2f}s" if isinstance(aiohttp_time, (int, float)) and aiohttp_time is not None else "N/A"
+        ffmpeg_disp = f"{ffmpeg_time:.2f}s" if isinstance(ffmpeg_time, (int, float)) and ffmpeg_time is not None else "N/A"
+        logging.info(f"URL: {url}, aiohttp响应时间: {aiohttp_disp}, FFmpeg响应时间: {ffmpeg_disp}")
     with open(os.path.join(output_folder, "speed_test_results.txt"), "w", encoding="utf-8") as f:
         f.write("URL测试结果:\n")
         f.write("=" * 50 + "\n")
-        for result in sorted(test_results, key=lambda x: x.get('aiohttp_time') or float('inf')):
+        for result in sorted(test_results, key=lambda x: x.get('aiohttp_time') if x.get('aiohttp_time') is not None else float('inf')):
+            aiohttp_disp = f"{result['aiohttp_time']:.2f}s" if isinstance(result['aiohttp_time'], (int, float)) and result['aiohttp_time'] is not None else "N/A"
+            ffmpeg_disp = f"{result['ffmpeg_time']:.2f}s" if isinstance(result['ffmpeg_time'], (int, float)) and result['ffmpeg_time'] is not None else "N/A"
             f.write(f"URL: {result['url']}\n")
-            f.write(f"aiohttp响应时间: {result['aiohttp_time']:.2f}s\n")
-            f.write(f"FFmpeg响应时间: {result['ffmpeg_time']:.2f}s\n")
+            f.write(f"aiohttp响应时间: {aiohttp_disp}\n")
+            f.write(f"FFmpeg响应时间: {ffmpeg_disp}\n")
             f.write("-" * 50 + "\n")
 
 async def main():
