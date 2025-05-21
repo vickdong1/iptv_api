@@ -100,7 +100,7 @@ announcements = [
             {
                 "name": None,
                 "url": "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/Robot.mp4",
-                "logo": "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/TangImage320.png"
+                "logo": "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/chao-assets.png"
             }
         ]
     }
