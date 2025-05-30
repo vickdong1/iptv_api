@@ -6,6 +6,7 @@ from datetime import datetime
 import config
 import os
 import difflib
+import gzip
 
 # 确保 output 文件夹存在
 output_folder = "output"
@@ -75,6 +76,7 @@ def parse_m3u_lines(lines):
     # 解析M3U格式的频道列表行。
     channels = OrderedDict()
     current_category = None
+    seen_channels = set()
 
     for line in lines:
         line = line.strip()
@@ -91,8 +93,11 @@ def parse_m3u_lines(lines):
         elif line and not line.startswith("#"):
             channel_url = line.strip()
             if current_category and channel_name:
-                # 添加频道信息到当前类别中
-                channels[current_category].append((channel_name, channel_url))
+                channel_key = (channel_name, channel_url)
+                if channel_key not in seen_channels:
+                    # 添加频道信息到当前类别中
+                    channels[current_category].append(channel_key)
+                    seen_channels.add(channel_key)
 
     return channels
 
@@ -100,6 +105,7 @@ def parse_txt_lines(lines):
     # 解析TXT格式的频道列表行。
     channels = OrderedDict()
     current_category = None
+    seen_channels = set()
 
     for line in lines:
         line = line.strip()
@@ -119,9 +125,15 @@ def parse_txt_lines(lines):
                 # 存储每个分割出的URL
                 for channel_url in channel_urls:
                     channel_url = channel_url.strip()  # 去掉前后空白
-                    channels[current_category].append((channel_name, channel_url))
+                    channel_key = (channel_name, channel_url)
+                    if channel_key not in seen_channels:
+                        channels[current_category].append(channel_key)
+                        seen_channels.add(channel_key)
             elif line:
-                channels[current_category].append((line, ''))
+                channel_key = (line, '')
+                if channel_key not in seen_channels:
+                    channels[current_category].append(channel_key)
+                    seen_channels.add(channel_key)
 
     return channels
 
@@ -148,7 +160,7 @@ def match_channels(template_channels, all_channels):
                     for online_channel_name, online_channel_url in online_channel_list:
                         if online_channel_name == similar_name:
                             # 匹配成功的频道信息加入结果中
-                            matched_channels[category].setdefault(channel_name, []).append(online_channel_url)
+                            matched_channels[category].setdefault(channel_name, set()).add(online_channel_url)
 
     return matched_channels
 
@@ -194,13 +206,16 @@ def updateChannelUrlsM3U(channels, template_channels):
     ipv6_m3u_path = os.path.join(output_folder, "live_ipv6.m3u")
     ipv6_txt_path = os.path.join(output_folder, "live_ipv6.txt")
 
-    with open(ipv4_m3u_path, "w", encoding="utf-8") as f_m3u_ipv4, \
-            open(ipv4_txt_path, "w", encoding="utf-8") as f_txt_ipv4, \
-            open(ipv6_m3u_path, "w", encoding="utf-8") as f_m3u_ipv6, \
-            open(ipv6_txt_path, "w", encoding="utf-8") as f_txt_ipv6:
+    with gzip.open(ipv4_m3u_path + ".gz", "wt", encoding="utf-8") as f_m3u_ipv4, \
+            gzip.open(ipv4_txt_path + ".gz", "wt", encoding="utf-8") as f_txt_ipv4, \
+            gzip.open(ipv6_m3u_path + ".gz", "wt", encoding="utf-8") as f_m3u_ipv6, \
+            gzip.open(ipv6_txt_path + ".gz", "wt", encoding="utf-8") as f_txt_ipv6:
 
-        f_m3u_ipv4.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
-        f_m3u_ipv6.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
+        # 只保留一个必要的 epg_url
+        if config.epg_urls:
+            epg_url = config.epg_urls[0]
+            f_m3u_ipv4.write(f"#EXTM3U x-tvg-url=\"{epg_url}\"\n")
+            f_m3u_ipv6.write(f"#EXTM3U x-tvg-url=\"{epg_url}\"\n")
 
         for group in config.announcements:
             f_txt_ipv4.write(f"{group['channel']},#genre#\n")
@@ -210,14 +225,14 @@ def updateChannelUrlsM3U(channels, template_channels):
                 if is_ipv6(url):
                     if url not in written_urls_ipv6:
                         written_urls_ipv6.add(url)
-                        f_m3u_ipv6.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
-                        f_m3u_ipv6.write(f"{url}\n")
+                        # 减少不必要的信息
+                        f_m3u_ipv6.write(f"#EXTINF:-1,{announcement['name']}\n{url}\n")
                         f_txt_ipv6.write(f"{announcement['name']},{url}\n")
                 else:
                     if url not in written_urls_ipv4:
                         written_urls_ipv4.add(url)
-                        f_m3u_ipv4.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
-                        f_m3u_ipv4.write(f"{url}\n")
+                        # 减少不必要的信息
+                        f_m3u_ipv4.write(f"#EXTINF:-1,{announcement['name']}\n{url}\n")
                         f_txt_ipv4.write(f"{announcement['name']},{url}\n")
 
         for category, channel_list in template_channels.items():
@@ -269,9 +284,8 @@ def add_url_suffix(url, index, total_urls, ip_version):
 
 def write_to_files(f_m3u, f_txt, category, channel_name, index, new_url):
     # 写入M3U和TXT文件。
-    logo_url = f"./pic/logos{channel_name}.png"
-    f_m3u.write(f"#EXTINF:-1 tvg-id=\"{index}\" tvg-name=\"{channel_name}\" tvg-logo=\"{logo_url}\" group-title=\"{category}\",{channel_name}\n")
-    f_m3u.write(new_url + "\n")
+    # 减少不必要的信息
+    f_m3u.write(f"#EXTINF:-1,{channel_name}\n{new_url}\n")
     f_txt.write(f"{channel_name},{new_url}\n")
 
 if __name__ == "__main__":
