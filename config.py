@@ -5,7 +5,32 @@ ip_version_priority = "ipv6"
 
 # 直播源URL列表
 source_urls = [
-   
+   # 月光宝盒
+    "https://ygbh.site/bh.txt",
+# NEW直播
+    "https://raw.githubusercontent.com/chuzjie/wuihui/main/小米/DSJ240101.txt",
+# 七星itv
+    "https://gitlab.com/tvkj/loong/-/raw/main/loog.txt",
+# 野火LIVE
+    "https://pastebin.com/raw/V0BhYHF4",
+# 欧歌vjj
+    "https://欧歌vjj.u.nxog.top/m/tv/",
+# 欧歌AI直播
+    "https://raw.githubusercontent.com/PizazzGY/TV/master/output/user_result.txt",
+# 码点影仓
+    "http://mdxgh.tpddns.cn:9999/new/mdzb.txt",
+# 易看电视
+    "http://117.72.68.25:9230/latest.txt",
+# 海燕直播
+    "https://chuxinya.top/f/AD5QHE/%E6%B5%B7%E7%87%95.txt",
+# 乘风TV-1.0.0-002
+    "http://file.91kds.cn/tvlist/2025030711/kds_all_lnyd.txt",
+# 拾光ITV
+    "https://4708.kstore.space/svip/ITV.txt",
+# 小苹果，蜗牛线路[测试2]
+    "http://wp.wadg.pro/down.php/d7b52d125998d00e2d2339bac6abd2b5.txt",
+# 电视家9.0-2025
+    "http://8.138.7.223/2025.txt",
     "https://cnb.cool/junchao.tang/llive/-/git/raw/main/中国IPTV",
     "https://www.iyouhun.com/tv/myIPTV/ipv6.m3u",
     "https://www.iyouhun.com/tv/myIPTV/ipv4.m3u",
@@ -14,8 +39,6 @@ source_urls = [
     "https://live.izbds.com/tv/iptv4.txt",
     "http://47.120.41.246:8899/zb.txt",
     "http://rihou.cc:555/gggg.nzk",
-    "http://晓峰.azip.dpdns.org:5008/?type=m3u",
-    "http://api.mytv666.top/lives/free.php?type=txt",
     "http://1.94.31.214/live/livelite.txt",
     "http://api.mytv666.top/lives/free.php?type=txt",
     "http://zhibo.feylen.top/fltv/js/ku9live.php?tpye=fl.txt",
