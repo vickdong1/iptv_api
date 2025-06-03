@@ -7,6 +7,7 @@ import concurrent.futures
 import config
 import os
 import difflib
+import time
 
 # 输出目录
 output_folder = "output"
@@ -21,7 +22,6 @@ logging.basicConfig(
 )
 
 def parse_template(template_file):
-    """解析模板文件，提取频道分类和频道名称"""
     template_channels = OrderedDict()
     current_category = None
     with open(template_file, "r", encoding="utf-8") as f:
@@ -42,26 +42,31 @@ def clean_channel_name(channel_name):
     cleaned_name = re.sub(r'(\D*)(\d+)', lambda m: m.group(1) + str(int(m.group(2))), cleaned_name)
     return cleaned_name.upper()
 
-def fetch_channels(url):
-    """从URL抓取频道列表，支持m3u和txt"""
+def fetch_channels(url, timeout=5, max_retries=2):
+    """从URL抓取频道列表，支持m3u和txt，增加超时和重试"""
     channels = OrderedDict()
-    try:
-        response = requests.get(url, timeout=8)
-        response.raise_for_status()
-        response.encoding = 'utf-8'
-        lines = response.text.split("\n")
-        is_m3u = any(line.startswith("#EXTINF") for line in lines[:15])
-        source_type = "m3u" if is_m3u else "txt"
-        logging.info(f"url: {url} 成功，判断为{source_type}格式")
-        if is_m3u:
-            channels.update(parse_m3u_lines(lines))
-        else:
-            channels.update(parse_txt_lines(lines))
-        if channels:
-            categories = ", ".join(channels.keys())
-            logging.info(f"url: {url} 成功，包含频道分类: {categories}")
-    except requests.RequestException as e:
-        logging.error(f"url: {url} 失败❌, Error: {e}")
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=timeout)
+            response.raise_for_status()
+            response.encoding = 'utf-8'
+            lines = response.text.split("\n")
+            is_m3u = any(line.startswith("#EXTINF") for line in lines[:15])
+            source_type = "m3u" if is_m3u else "txt"
+            logging.info(f"url: {url} 成功，判断为{source_type}格式")
+            if is_m3u:
+                channels.update(parse_m3u_lines(lines))
+            else:
+                channels.update(parse_txt_lines(lines))
+            if channels:
+                categories = ", ".join(channels.keys())
+                logging.info(f"url: {url} 成功，包含频道分类: {categories}")
+            break
+        except requests.RequestException as e:
+            logging.warning(f"url: {url} 第{attempt+1}次失败, Error: {e}")
+            time.sleep(0.5)
+    else:
+        logging.error(f"url: {url} 失败❌, 多次重试仍失败")
     return channels
 
 def parse_m3u_lines(lines):
@@ -148,20 +153,31 @@ def merge_channels(target, source):
 def is_ipv6(url):
     return re.match(r'^http:\/\/\[[0-9a-fA-F:]+\]', url) is not None
 
-def test_url_speed(url, timeout=3):
-    """测速单个URL，失败或超时返回极大值"""
-    try:
-        resp = requests.head(url, timeout=timeout)
-        if resp.status_code == 200:
-            return url, resp.elapsed.total_seconds()
-    except Exception:
-        pass
+def test_url_speed(url, timeout=3, max_retries=2):
+    """测速单个URL，失败或超时返回极大值，增加重试机制"""
+    for attempt in range(max_retries):
+        try:
+            resp = requests.head(url, timeout=timeout)
+            if resp.status_code == 200:
+                return url, resp.elapsed.total_seconds()
+        except Exception as e:
+            logging.debug(f"测速失败: {url}, 尝试{attempt+1}/{max_retries}, 错误: {e}")
+        time.sleep(0.5)
     return url, float('inf')
 
-def get_best_urls(url_list, max_count=3, timeout=3):
-    """多线程测速，返回最快的max_count个url"""
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        results = list(executor.map(lambda u: test_url_speed(u, timeout), url_list))
+def get_best_urls(url_list, max_count=3, timeout=3, max_workers=8):
+    """多线程测速，返回最快的max_count个url，限制线程池规模，避免卡死"""
+    urls_to_test = url_list[:10]  # 最多只测速前10个，避免直播源异常时卡太久
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_url = {executor.submit(test_url_speed, u, timeout): u for u in urls_to_test}
+        results = []
+        for future in concurrent.futures.as_completed(future_to_url, timeout=timeout * len(urls_to_test) + 5):
+            try:
+                result = future.result()
+                results.append(result)
+            except Exception as exc:
+                url = future_to_url[future]
+                logging.warning(f"测速任务异常: {url}, 错误: {exc}")
     available = [r for r in results if r[1] != float('inf')]
     available.sort(key=lambda x: x[1])
     return [u for u, _ in available[:max_count]]
