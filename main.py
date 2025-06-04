@@ -245,8 +245,15 @@ def test_url_speed(url):
                 # 获取内容大小
                 content_size = int(response.headers.get('Content-Length', 0))
                 
-                # 读取少量数据确保连接建立
-                response.raw.read(bytes_to_read)
+                # 添加读取超时处理
+                try:
+                    data = response.raw.read(bytes_to_read, decode_content=True)
+                    if not data:
+                        raise requests.exceptions.ReadTimeout("Empty response")
+                except requests.exceptions.ReadTimeout:
+                    logging.warning(f"URL读取超时: {url}, 尝试 {attempt+1}/{retries}")
+                    continue
+                    
             end_time = time.time()
             
             elapsed = end_time - start_time
@@ -254,7 +261,7 @@ def test_url_speed(url):
             successes += 1
             
             logging.debug(f"URL测试成功: {url}, 尝试 {attempt+1}/{retries}, 时间={elapsed:.2f}s, 大小={content_size}B")
-        except requests.RequestException as e:
+        except (requests.RequestException, TimeoutError) as e:
             logging.debug(f"URL测试失败: {url}, 尝试 {attempt+1}/{retries}, 错误: {e}")
             continue
     
