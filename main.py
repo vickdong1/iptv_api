@@ -9,7 +9,6 @@ import difflib
 import time
 from concurrent.futures import ThreadPoolExecutor
 import argparse
-import psutil
 
 # 确保 output 文件夹存在
 output_folder = "output"
@@ -331,8 +330,6 @@ def updateChannelUrlsM3U(channels, template_channels, max_workers=10, limit=20):
         f_m3u_ipv4.write(f'#EXTM3U x-tvg-url={epg_urls_str}\n')
         f_m3u_ipv6.write(f'#EXTM3U x-tvg-url={epg_urls_str}\n')
         
-        # 其他代码保持不变...
-        
         # 写入公告频道
         for group in config.announcements:
             f_txt_ipv4.write(f"{group['channel']},#genre#\n")
@@ -423,22 +420,6 @@ def write_to_files(f_m3u, f_txt, category, channel_name, index, new_url):
     f_m3u.write(f"{new_url}\n")
     f_txt.write(f"{channel_name},{new_url}\n")
 
-def get_available_cpu_cores():
-    """获取系统可用CPU核心数"""
-    try:
-        return psutil.cpu_count(logical=False) or 4
-    except:
-        return 4
-
-def get_config_value(args, config, attr_name, default=None):
-    """从命令行参数或配置文件获取值"""
-    if hasattr(args, attr_name) and getattr(args, attr_name) is not None:
-        return getattr(args, attr_name)
-    elif hasattr(config, attr_name):
-        return getattr(config, attr_name)
-    else:
-        return default
-
 def main():
     parser = argparse.ArgumentParser(description='IPTV频道列表生成工具')
     parser.add_argument('--template', type=str, help='模板文件路径')
@@ -466,7 +447,7 @@ def main():
     
     # 获取各参数值，优先使用命令行参数，其次使用配置文件，最后使用默认值
     template_file = get_config_value(args, config, 'template_file', 'demo.txt')
-    max_workers = get_config_value(args, config, 'max_workers', max(4, get_available_cpu_cores() - 1))
+    max_workers = get_config_value(args, config, 'max_workers', 10)  # 移除psutil依赖，使用固定值
     limit = get_config_value(args, config, 'limit', 20)
     
     logging.info(f"开始生成IPTV播放列表，参数: 工作线程={max_workers}, 每个频道保留线路={limit}")
@@ -483,6 +464,15 @@ def main():
     logging.info(f"IPv4 TXT文件: {os.path.abspath(os.path.join(output_folder, 'live_ipv4.txt'))}")
     logging.info(f"IPv6 M3U文件: {os.path.abspath(os.path.join(output_folder, 'live_ipv6.m3u'))}")
     logging.info(f"IPv6 TXT文件: {os.path.abspath(os.path.join(output_folder, 'live_ipv6.txt'))}")
+
+def get_config_value(args, config, attr_name, default=None):
+    """从命令行参数或配置文件获取值"""
+    if hasattr(args, attr_name) and getattr(args, attr_name) is not None:
+        return getattr(args, attr_name)
+    elif hasattr(config, attr_name):
+        return getattr(config, attr_name)
+    else:
+        return default
 
 if __name__ == "__main__":
     main()
