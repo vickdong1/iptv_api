@@ -250,11 +250,18 @@ def test_url_speed(url):
                 
                 # 添加读取超时处理
                 try:
+                    # 设置读取超时
+                    socket_timeout = min(10, timeout * 2)  # 读取超时至少为10秒或连接超时的2倍
+                    response.raw._fp.fp.sock.settimeout(socket_timeout)
+                    
                     data = response.raw.read(bytes_to_read, decode_content=True)
                     if not data:
                         raise requests.exceptions.ReadTimeout("Empty response")
-                except requests.exceptions.ReadTimeout:
-                    logging.warning(f"URL读取超时: {url}, 尝试 {attempt+1}/{retries}")
+                except (requests.exceptions.ReadTimeout, TimeoutError) as e:
+                    logging.warning(f"URL读取超时: {url}, 尝试 {attempt+1}/{retries}, 超时时间: {socket_timeout}s")
+                    continue
+                except Exception as e:
+                    logging.warning(f"URL读取异常: {url}, 尝试 {attempt+1}/{retries}, 错误: {e}")
                     continue
                     
             end_time = time.time()
@@ -460,7 +467,7 @@ def main():
     
     # 获取各参数值，优先使用命令行参数，其次使用配置文件，最后使用默认值
     template_file = get_config_value(args, local_config, 'template_file', 'demo.txt')
-    max_workers = get_config_value(args, local_config, 'max_workers', 10)  # 移除psutil依赖，使用固定值
+    max_workers = get_config_value(args, local_config, 'max_workers', 10)
     limit = get_config_value(args, local_config, 'limit', 20)
     
     logging.info(f"开始生成IPTV播放列表，参数: 工作线程={max_workers}, 每个频道保留线路={limit}")
@@ -470,9 +477,20 @@ def main():
     total_urls = sum(len(urls) for cat in channels.values() for urls in cat.values())
     logging.info(f"共找到 {total_urls} 个候选URL，开始测速...")
     
-    updateChannelUrlsM3U(channels, template_channels, max_workers=max_workers, limit=limit)
+    # 增加总体超时控制
+    start_time = time.time()
+    max_total_time = 3600  # 设置最大运行时间为1小时
     
-    logging.info("IPTV播放列表生成完成!")
+    try:
+        updateChannelUrlsM3U(channels, template_channels, max_workers=max_workers, limit=limit)
+    except KeyboardInterrupt:
+        logging.warning("程序被用户中断")
+    except Exception as e:
+        logging.error(f"处理过程中发生错误: {e}")
+    finally:
+        elapsed_time = time.time() - start_time
+        logging.info(f"IPTV播放列表生成完成，耗时: {elapsed_time:.2f}秒")
+    
     logging.info(f"IPv4 M3U文件: {os.path.abspath(os.path.join(output_folder, 'live_ipv4.m3u'))}")
     logging.info(f"IPv4 TXT文件: {os.path.abspath(os.path.join(output_folder, 'live_ipv4.txt'))}")
     logging.info(f"IPv6 M3U文件: {os.path.abspath(os.path.join(output_folder, 'live_ipv6.m3u'))}")
