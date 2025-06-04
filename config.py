@@ -5,6 +5,8 @@ ip_version_priority = "ipv4"
 
 # 直播源URL列表
 source_urls = [
+    "https://live.kakaxi-1.ink/ipv4.txt",
+    "https://live.kakaxi-1.ink/ipv4.1.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/iodata999/frxz751113-IPTVzb1/refs/heads/main/结果.m3u",
 # 月光宝盒
     "https://ygbh.site/bh.txt",
