@@ -429,6 +429,9 @@ def main():
     parser.add_argument('--config', type=str, help='配置文件路径')
     args = parser.parse_args()
     
+    # 创建一个局部变量保存配置
+    local_config = config
+    
     # 加载配置文件（如果提供）
     if args.config:
         try:
@@ -436,7 +439,7 @@ def main():
             spec = importlib.util.spec_from_file_location("custom_config", args.config)
             custom_config = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(custom_config)
-            config = custom_config  # 使用自定义配置
+            local_config = custom_config  # 使用自定义配置
         except Exception as e:
             logging.error(f"加载配置文件失败: {e}")
             return
@@ -446,9 +449,9 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
     
     # 获取各参数值，优先使用命令行参数，其次使用配置文件，最后使用默认值
-    template_file = get_config_value(args, config, 'template_file', 'demo.txt')
-    max_workers = get_config_value(args, config, 'max_workers', 10)  # 移除psutil依赖，使用固定值
-    limit = get_config_value(args, config, 'limit', 20)
+    template_file = get_config_value(args, local_config, 'template_file', 'demo.txt')
+    max_workers = get_config_value(args, local_config, 'max_workers', 10)  # 移除psutil依赖，使用固定值
+    limit = get_config_value(args, local_config, 'limit', 20)
     
     logging.info(f"开始生成IPTV播放列表，参数: 工作线程={max_workers}, 每个频道保留线路={limit}")
     
@@ -465,14 +468,14 @@ def main():
     logging.info(f"IPv6 M3U文件: {os.path.abspath(os.path.join(output_folder, 'live_ipv6.m3u'))}")
     logging.info(f"IPv6 TXT文件: {os.path.abspath(os.path.join(output_folder, 'live_ipv6.txt'))}")
 
-def get_config_value(args, config, attr_name, default=None):
+def get_config_value(args, config_obj, attr_name, default=None):
     """从命令行参数或配置文件获取值"""
     if hasattr(args, attr_name) and getattr(args, attr_name) is not None:
         return getattr(args, attr_name)
-    elif hasattr(config, attr_name):
-        return getattr(config, attr_name)
+    elif hasattr(config_obj, attr_name):
+        return getattr(config_obj, attr_name)
     else:
         return default
 
 if __name__ == "__main__":
-    main()
+    main()    
