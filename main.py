@@ -327,8 +327,8 @@ def updateChannelUrlsM3U(channels, template_channels, max_workers=10, limit=20):
          open(ipv6_txt_path, "w", encoding="utf-8") as f_txt_ipv6:
         
         # 写入M3U文件头部
-        f_m3u_ipv4.write(f"#EXTM3U x-tvg-url={','.join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n")
-        f_m3u_ipv6.write(f"#EXTM3U x-tvg-url={','.join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n")
+        f_m3u_ipv4.write(f'#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n')
+        f_m3u_ipv6.write(f'#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n')
         
         # 写入公告频道
         for group in config.announcements:
