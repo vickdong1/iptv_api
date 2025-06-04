@@ -6,6 +6,7 @@ from datetime import datetime
 import config
 import os
 import difflib
+import time
 
 # 确保 output 文件夹存在
 output_folder = "output"
@@ -193,7 +194,36 @@ def is_ipv6(url):
     :param url: 待判断的URL
     :return: 如果是IPv6地址返回True，否则返回False
     """
-    return re.match(r'^http:\/\/\[[0-9a-fA-F:]+\]', url) is not None
+    return re.match(r'^http:\/\/<span data-type="block-math" data-value="WzAtOWEtZkEtRjpdKw=="></span>', url) is not None
+
+def test_url_speed(url):
+    """
+    测试URL的响应时间。
+    :param url: 待测试的URL
+    :return: 响应时间，如果测试失败返回无穷大
+    """
+    try:
+        start_time = time.time()
+        response = requests.head(url, timeout=5)
+        response.raise_for_status()
+        end_time = time.time()
+        return end_time - start_time
+    except requests.RequestException:
+        return float('inf')
+
+def sort_and_filter_urls(urls, written_urls, limit=20):
+    """
+    排序和过滤URL，只保留响应时间最短的前limit条URL。
+    :param urls: URL列表
+    :param written_urls: 已写入的URL集合
+    :param limit: 每个频道保留的最大线路数量
+    :return: 排序和过滤后的URL列表
+    """
+    url_speed_pairs = [(url, test_url_speed(url)) for url in urls if url and url not in written_urls and not any(blacklist in url for blacklist in config.url_blacklist)]
+    url_speed_pairs.sort(key=lambda x: x[1])
+    filtered_urls = [url for url, _ in url_speed_pairs[:limit]]
+    written_urls.update(filtered_urls)
+    return filtered_urls
 
 def updateChannelUrlsM3U(channels, template_channels):
     """
@@ -241,17 +271,8 @@ def updateChannelUrlsM3U(channels, template_channels):
             if category in channels:
                 for channel_name in channel_list:
                     if channel_name in channels[category]:
-                        sorted_urls_ipv4 = []
-                        sorted_urls_ipv6 = []
-                        for url in channels[category][channel_name]:
-                            if is_ipv6(url):
-                                if url not in written_urls_ipv6:
-                                    sorted_urls_ipv6.append(url)
-                                    written_urls_ipv6.add(url)
-                            else:
-                                if url not in written_urls_ipv4:
-                                    sorted_urls_ipv4.append(url)
-                                    written_urls_ipv4.add(url)
+                        sorted_urls_ipv4 = sort_and_filter_urls(channels[category][channel_name], written_urls_ipv4)
+                        sorted_urls_ipv6 = sort_and_filter_urls(channels[category][channel_name], written_urls_ipv6)
                         total_urls_ipv4 = len(sorted_urls_ipv4)
                         total_urls_ipv6 = len(sorted_urls_ipv6)
                         for index, url in enumerate(sorted_urls_ipv4, start=1):
@@ -262,20 +283,6 @@ def updateChannelUrlsM3U(channels, template_channels):
                             write_to_files(f_m3u_ipv6, f_txt_ipv6, category, channel_name, index, new_url)
         f_txt_ipv4.write("\n")
         f_txt_ipv6.write("\n")
-
-def sort_and_filter_urls(urls, written_urls):
-    """
-    排序和过滤URL。
-    :param urls: URL列表
-    :param written_urls: 已写入的URL集合
-    :return: 排序和过滤后的URL列表
-    """
-    filtered_urls = [
-        url for url in sorted(urls, key=lambda u: not is_ipv6(u) if config.ip_version_priority == "ipv6" else is_ipv6(u))
-        if url and url not in written_urls and not any(blacklist in url for blacklist in config.url_blacklist)
-    ]
-    written_urls.update(filtered_urls)
-    return filtered_urls
 
 def add_url_suffix(url, index, total_urls, ip_version):
     """
