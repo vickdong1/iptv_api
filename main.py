@@ -6,6 +6,8 @@ from datetime import datetime
 import config
 import os
 import difflib
+import m3u8
+import time
 
 # 确保 output 文件夹存在
 output_folder = "output"
@@ -16,6 +18,11 @@ if not os.path.exists(output_folder):
 log_file_path = os.path.join(output_folder, "function.log")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler(log_file_path, "w", encoding="utf-8"), logging.StreamHandler()])
+
+# 缓存有效链接
+valid_url_cache = {}
+MAX_RETRIES = 3
+headers = {}  # 可根据实际情况设置请求头
 
 def parse_template(template_file):
     # 解析模板文件，提取频道分类和频道名称。
@@ -44,6 +51,39 @@ def clean_channel_name(channel_name):
     cleaned_name = re.sub(r'(\D*)(\d+)', lambda m: m.group(1) + str(int(m.group(2))), cleaned_name)  # 将数字前面的部分保留，数字转换为整数
     return cleaned_name.upper()  # 转换为大写
 
+def test_url_validity(url):
+    if url in valid_url_cache:
+        return valid_url_cache[url]
+    for _ in range(MAX_RETRIES):
+        try:
+            if url.endswith('.m3u8'):
+                m3u8_obj = m3u8.load(url, headers=headers, timeout=5)
+                result = bool(m3u8_obj.segments)
+            else:
+                response = requests.head(url, headers=headers, timeout=5)
+                result = response.status_code < 400
+            valid_url_cache[url] = result
+            return result
+        except (requests.RequestException, m3u8.HTTPError, m3u8.ParsingError):
+            continue
+    valid_url_cache[url] = False
+    return False
+
+def get_best_url(urls):
+    best_url = None
+    best_time = float('inf')
+    for url in urls:
+        try:
+            start_time = time.time()
+            if test_url_validity(url):
+                elapsed_time = time.time() - start_time
+                if elapsed_time < best_time:
+                    best_time = elapsed_time
+                    best_url = url
+        except Exception:
+            continue
+    return best_url
+
 def fetch_channels(url):
     # 从指定URL抓取频道列表。
     channels = OrderedDict()
@@ -55,7 +95,8 @@ def fetch_channels(url):
         lines = response.text.split("\n")
         current_category = None
         is_m3u = any(line.startswith("#EXTINF") for line in lines[:15])
-        source_type = "m3u" if is_m3u else "txt"
+        is_flv = any(line.endswith('.flv') for line in lines)
+        source_type = "m3u" if is_m3u else "flv" if is_flv else "txt"
         logging.info(f"url: {url} 成功，判断为{source_type}格式")
 
         if is_m3u:
@@ -210,13 +251,13 @@ def updateChannelUrlsM3U(channels, template_channels):
                 if is_ipv6(url):
                     if url not in written_urls_ipv6:
                         written_urls_ipv6.add(url)
-                        f_m3u_ipv6.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
+                        f_m3u_ipv6.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}" tvg-language="Chinese" tvg-country="CN",{announcement['name']}\n""")
                         f_m3u_ipv6.write(f"{url}\n")
                         f_txt_ipv6.write(f"{announcement['name']},{url}\n")
                 else:
                     if url not in written_urls_ipv4:
                         written_urls_ipv4.add(url)
-                        f_m3u_ipv4.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}",{announcement['name']}\n""")
+                        f_m3u_ipv4.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}" tvg-language="Chinese" tvg-country="CN",{announcement['name']}\n""")
                         f_m3u_ipv4.write(f"{url}\n")
                         f_txt_ipv4.write(f"{announcement['name']},{url}\n")
 
@@ -226,28 +267,19 @@ def updateChannelUrlsM3U(channels, template_channels):
             if category in channels:
                 for channel_name in channel_list:
                     if channel_name in channels[category]:
-                        sorted_urls_ipv4 = []
-                        sorted_urls_ipv6 = []
-                        for url in channels[category][channel_name]:
-                            if is_ipv6(url):
-                                if url not in written_urls_ipv6:
-                                    sorted_urls_ipv6.append(url)
-                                    written_urls_ipv6.add(url)
-                            else:
-                                if url not in written_urls_ipv4:
-                                    sorted_urls_ipv4.append(url)
-                                    written_urls_ipv4.add(url)
+                        ipv4_urls = [url for url in channels[category][channel_name] if not is_ipv6(url)]
+                        ipv6_urls = [url for url in channels[category][channel_name] if is_ipv6(url)]
 
-                        total_urls_ipv4 = len(sorted_urls_ipv4)
-                        total_urls_ipv6 = len(sorted_urls_ipv6)
+                        best_ipv4_url = get_best_url(ipv4_urls)
+                        best_ipv6_url = get_best_url(ipv6_urls)
 
-                        for index, url in enumerate(sorted_urls_ipv4, start=1):
-                            new_url = add_url_suffix(url, index, total_urls_ipv4, "IPV4")
-                            write_to_files(f_m3u_ipv4, f_txt_ipv4, category, channel_name, index, new_url)
+                        if best_ipv4_url:
+                            new_url = add_url_suffix(best_ipv4_url, 1, 1, "IPV4")
+                            write_to_files(f_m3u_ipv4, f_txt_ipv4, category, channel_name, 1, new_url)
 
-                        for index, url in enumerate(sorted_urls_ipv6, start=1):
-                            new_url = add_url_suffix(url, index, total_urls_ipv6, "IPV6")
-                            write_to_files(f_m3u_ipv6, f_txt_ipv6, category, channel_name, index, new_url)
+                        if best_ipv6_url:
+                            new_url = add_url_suffix(best_ipv6_url, 1, 1, "IPV6")
+                            write_to_files(f_m3u_ipv6, f_txt_ipv6, category, channel_name, 1, new_url)
 
         f_txt_ipv4.write("\n")
         f_txt_ipv6.write("\n")
@@ -270,7 +302,7 @@ def add_url_suffix(url, index, total_urls, ip_version):
 def write_to_files(f_m3u, f_txt, category, channel_name, index, new_url):
     # 写入M3U和TXT文件。
     logo_url = f"./pic/logos{channel_name}.png"
-    f_m3u.write(f"#EXTINF:-1 tvg-id=\"{index}\" tvg-name=\"{channel_name}\" tvg-logo=\"{logo_url}\" group-title=\"{category}\",{channel_name}\n")
+    f_m3u.write(f"#EXTINF:-1 tvg-id=\"{index}\" tvg-name=\"{channel_name}\" tvg-logo=\"{logo_url}\" group-title=\"{category}\" tvg-language=\"Chinese\" tvg-country=\"CN\",{channel_name}\n")
     f_m3u.write(new_url + "\n")
     f_txt.write(f"{channel_name},{new_url}\n")
 
