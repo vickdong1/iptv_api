@@ -211,6 +211,9 @@ def get_adaptive_test_params():
     # 对于大文件，减少读取的数据量以加快测试速度
     bytes_to_read = base_bytes if avg_speed < 3 else base_bytes // 2
     
+    # 确保timeout参数有效
+    timeout = max(1, timeout)  # 设置最小超时为1秒
+    
     return {"retries": retries, "timeout": timeout, "bytes_to_read": bytes_to_read}
 
 def test_url_speed(url):
