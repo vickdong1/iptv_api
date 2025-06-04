@@ -6,26 +6,34 @@ from datetime import datetime
 import config
 import os
 import difflib
-import m3u8
 import time
+import m3u8
 
 # 确保 output 文件夹存在
 output_folder = "output"
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
-# 日志记录，将日志文件保存到 output 文件夹下
+# 日志记录
 log_file_path = os.path.join(output_folder, "function.log")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler(log_file_path, "w", encoding="utf-8"), logging.StreamHandler()])
 
+# 配置项
+MAX_RETRIES = 3
+HTTP_TIMEOUT = 5  # HTTP请求超时时间（秒）
+M3U8_TIMEOUT = 10  # M3U8解析超时时间（秒）
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+}  # 模拟浏览器请求头
+
 # 缓存有效链接
 valid_url_cache = {}
-MAX_RETRIES = 3
-headers = {}  # 可根据实际情况设置请求头
+# 缓存无效链接（避免重复验证）
+invalid_url_cache = {}
 
 def parse_template(template_file):
-    # 解析模板文件，提取频道分类和频道名称。
+    """解析模板文件，提取频道分类和名称"""
     template_channels = OrderedDict()
     current_category = None
 
@@ -34,71 +42,120 @@ def parse_template(template_file):
             line = line.strip()
             if line and not line.startswith("#"):
                 if "#genre#" in line:
-                    # 提取当前类别
                     current_category = line.split(",")[0].strip()
                     template_channels[current_category] = []
                 elif current_category:
-                    # 提取频道名称并加入当前类别中
                     channel_name = line.split(",")[0].strip()
                     template_channels[current_category].append(channel_name)
 
     return template_channels
 
-# 数据清洗函数
 def clean_channel_name(channel_name):
-    cleaned_name = re.sub(r'[$「」-]', '', channel_name)  # 去掉中括号、«», 和'-'字符
-    cleaned_name = re.sub(r'\s+', '', cleaned_name)  # 去掉所有空白字符
-    cleaned_name = re.sub(r'(\D*)(\d+)', lambda m: m.group(1) + str(int(m.group(2))), cleaned_name)  # 将数字前面的部分保留，数字转换为整数
-    return cleaned_name.upper()  # 转换为大写
+    """清洗频道名称，提高匹配准确率"""
+    cleaned_name = re.sub(r'[$「」-]', '', channel_name)  # 移除特殊字符
+    cleaned_name = re.sub(r'\s+', '', cleaned_name)  # 移除空白字符
+    cleaned_name = re.sub(r'(\D*)(\d+)', lambda m: m.group(1) + str(int(m.group(2))), cleaned_name)  # 规范化数字
+    return cleaned_name.upper()  # 统一转换为大写
 
 def test_url_validity(url):
+    """混合验证URL有效性：先HTTP检查，再对M3U8进行深度解析"""
     if url in valid_url_cache:
-        return valid_url_cache[url]
-    for _ in range(MAX_RETRIES):
+        return True
+    if url in invalid_url_cache:
+        return False
+    
+    for attempt in range(MAX_RETRIES):
         try:
-            if url.endswith('.m3u8'):
-                m3u8_obj = m3u8.load(url, headers=headers, timeout=5)
-                result = bool(m3u8_obj.segments)
-            else:
-                response = requests.head(url, headers=headers, timeout=5)
-                result = response.status_code < 400
-            valid_url_cache[url] = result
-            return result
-        except (requests.RequestException, m3u8.HTTPError, m3u8.ParsingError):
-            continue
-    valid_url_cache[url] = False
+            # 1. 快速HTTP检查（HEAD请求）
+            response = requests.head(url, headers=headers, timeout=HTTP_TIMEOUT)
+            if response.status_code >= 400:
+                raise requests.RequestException(f"HTTP status {response.status_code}")
+            
+            # 2. 对M3U8文件进行深度解析
+            if url.endswith(('.m3u8', '.m3u')):
+                m3u8_obj = m3u8.load(url, headers=headers, timeout=M3U8_TIMEOUT)
+                if not m3u8_obj.segments and not m3u8_obj.playlists:
+                    raise ValueError("Empty M3U8 file")
+                
+                # 验证主播放列表中的子流
+                if m3u8_obj.is_variant:
+                    valid_substreams = 0
+                    for playlist in m3u8_obj.playlists[:3]:  # 仅检查前3个子流
+                        try:
+                            sub_url = playlist.uri
+                            if not sub_url.startswith('http'):
+                                base_url = url.rsplit('/', 1)[0]
+                                sub_url = f"{base_url}/{sub_url}"
+                            sub_m3u8 = m3u8.load(sub_url, headers=headers, timeout=M3U8_TIMEOUT)
+                            if sub_m3u8.segments:
+                                valid_substreams += 1
+                        except Exception:
+                            continue
+                    if valid_substreams == 0:
+                        raise ValueError("No valid substreams found")
+                
+                logging.info(f"URL验证成功: {url}")
+                valid_url_cache[url] = True
+                return True
+            
+            # 非M3U8文件，仅通过HTTP检查即可
+            logging.info(f"URL验证成功: {url}")
+            valid_url_cache[url] = True
+            return True
+            
+        except (requests.RequestException, m3u8.HTTPError, m3u8.ParsingError, ValueError) as e:
+            logging.warning(f"URL验证失败 (尝试 {attempt+1}/{MAX_RETRIES}): {url} - {str(e)}")
+            if attempt == MAX_RETRIES - 1:
+                invalid_url_cache[url] = True
+                return False
+    
+    invalid_url_cache[url] = True
     return False
 
 def get_best_url(urls):
-    best_url = None
-    best_time = float('inf')
+    """根据响应速度和质量选择最佳URL"""
+    valid_urls = []
+    
+    # 并行验证URL（简化版，实际可使用线程池）
     for url in urls:
+        if test_url_validity(url):
+            valid_urls.append(url)
+    
+    if not valid_urls:
+        return None
+    
+    # 对有效URL进行测速
+    results = []
+    for url in valid_urls:
         try:
             start_time = time.time()
-            if test_url_validity(url):
-                elapsed_time = time.time() - start_time
-                if elapsed_time < best_time:
-                    best_time = elapsed_time
-                    best_url = url
+            response = requests.head(url, headers=headers, timeout=HTTP_TIMEOUT)
+            elapsed_time = time.time() - start_time
+            results.append((url, elapsed_time, response.headers.get('content-length')))
         except Exception:
             continue
-    return best_url
+    
+    # 排序：优先响应时间，其次内容长度（推测为码率）
+    results.sort(key=lambda x: (x[1], -int(x[2] or 0)))
+    return results[0][0] if results else None
 
 def fetch_channels(url):
-    # 从指定URL抓取频道列表。
+    """从指定URL抓取频道列表"""
     channels = OrderedDict()
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         response.encoding = 'utf-8'
         lines = response.text.split("\n")
-        current_category = None
+        
+        # 判断文件类型
         is_m3u = any(line.startswith("#EXTINF") for line in lines[:15])
         is_flv = any(line.endswith('.flv') for line in lines)
         source_type = "m3u" if is_m3u else "flv" if is_flv else "txt"
-        logging.info(f"url: {url} 成功，判断为{source_type}格式")
+        logging.info(f"URL: {url} 解析成功，类型: {source_type}")
 
+        # 解析频道
         if is_m3u:
             channels.update(parse_m3u_lines(lines))
         else:
@@ -106,14 +163,24 @@ def fetch_channels(url):
 
         if channels:
             categories = ", ".join(channels.keys())
-            logging.info(f"url: {url} 成功，包含频道分类: {categories}")
+            logging.info(f"URL: {url} 包含分类: {categories}")
+            
+            # 验证抓取的频道数量
+            channel_count = sum(len(ch_list) for ch_list in channels.values())
+            if channel_count < 5:
+                logging.warning(f"URL: {url} 频道数量过少 ({channel_count})，可能解析失败")
+                
+        return channels
+        
     except requests.RequestException as e:
-        logging.error(f"url: {url} 失败❌, Error: {e}")
-
-    return channels
+        logging.error(f"URL: {url} 请求失败 - {str(e)}")
+        return OrderedDict()
+    except Exception as e:
+        logging.error(f"URL: {url} 解析异常 - {str(e)}")
+        return OrderedDict()
 
 def parse_m3u_lines(lines):
-    # 解析M3U格式的频道列表行。
+    """解析M3U格式的频道列表"""
     channels = OrderedDict()
     current_category = None
 
@@ -124,77 +191,84 @@ def parse_m3u_lines(lines):
             if match:
                 current_category = match.group(1).strip()
                 channel_name = match.group(2).strip()
-                if channel_name and channel_name.startswith("CCTV"):  # 判断频道名称是否存在且以CCTV开头
-                    channel_name = clean_channel_name(channel_name)  # 频道名称数据清洗
-
+                if channel_name:
+                    channel_name = clean_channel_name(channel_name)
+                    
                 if current_category not in channels:
                     channels[current_category] = []
         elif line and not line.startswith("#"):
-            channel_url = line.strip()
             if current_category and channel_name:
-                # 添加频道信息到当前类别中
+                channel_url = line.strip()
                 channels[current_category].append((channel_name, channel_url))
 
     return channels
 
 def parse_txt_lines(lines):
-    # 解析TXT格式的频道列表行。
+    """解析TXT格式的频道列表"""
     channels = OrderedDict()
     current_category = None
 
     for line in lines:
         line = line.strip()
         if "#genre#" in line:
-            # 提取当前类别
             current_category = line.split(",")[0].strip()
             channels[current_category] = []
         elif current_category:
             match = re.match(r"^(.*?),(.*?)$", line)
             if match:
                 channel_name = match.group(1).strip()
-                if channel_name and channel_name.startswith("CCTV"):  # 判断频道名称是否存在且以CCTV开头
-                    channel_name = clean_channel_name(channel_name)  # 频道名称数据清洗
-                # 提取频道URL，并分割成多个部分
+                if channel_name:
+                    channel_name = clean_channel_name(channel_name)
+                
+                # 处理多个URL（用#分隔）
                 channel_urls = match.group(2).strip().split('#')
-
-                # 存储每个分割出的URL
-                for channel_url in channel_urls:
-                    channel_url = channel_url.strip()  # 去掉前后空白
-                    channels[current_category].append((channel_name, channel_url))
+                for url in channel_urls:
+                    url = url.strip()
+                    if url:
+                        channels[current_category].append((channel_name, url))
             elif line:
                 channels[current_category].append((line, ''))
 
     return channels
 
 def find_similar_name(target_name, name_list):
-    # 查找最相似的名称
+    """查找最相似的频道名称"""
     matches = difflib.get_close_matches(target_name, name_list, n=1, cutoff=0.6)
     return matches[0] if matches else None
 
 def match_channels(template_channels, all_channels):
-    # 匹配模板中的频道与抓取到的频道。
+    """将模板频道与抓取的频道进行匹配"""
     matched_channels = OrderedDict()
 
+    # 构建在线频道名称索引
     all_online_channel_names = []
-    for online_category, online_channel_list in all_channels.items():
-        for online_channel_name, _ in online_channel_list:
-            all_online_channel_names.append(online_channel_name)
+    for online_category, channel_list in all_channels.items():
+        for channel_name, _ in channel_list:
+            all_online_channel_names.append(channel_name)
 
+    # 执行匹配
     for category, channel_list in template_channels.items():
         matched_channels[category] = OrderedDict()
         for channel_name in channel_list:
             similar_name = find_similar_name(channel_name, all_online_channel_names)
             if similar_name:
+                # 收集所有匹配的URL
+                urls = []
                 for online_category, online_channel_list in all_channels.items():
-                    for online_channel_name, online_channel_url in online_channel_list:
-                        if online_channel_name == similar_name:
-                            # 匹配成功的频道信息加入结果中
-                            matched_channels[category].setdefault(channel_name, []).append(online_channel_url)
+                    for online_name, url in online_channel_list:
+                        if online_name == similar_name:
+                            urls.append(url)
+                
+                if urls:
+                    matched_channels[category][channel_name] = urls
+                    logging.info(f"匹配成功: {channel_name} -> {similar_name} ({len(urls)}个源)")
+                else:
+                    logging.warning(f"匹配失败: {channel_name}")
 
     return matched_channels
 
 def filter_source_urls(template_file):
-    # 过滤源URL，获取匹配后的频道信息。
+    """过滤源URL，获取匹配后的频道信息"""
     template_channels = parse_template(template_file)
     source_urls = config.source_urls
 
@@ -204,11 +278,10 @@ def filter_source_urls(template_file):
         merge_channels(all_channels, fetched_channels)
 
     matched_channels = match_channels(template_channels, all_channels)
-
     return matched_channels, template_channels
 
 def merge_channels(target, source):
-    # 合并两个频道字典。
+    """合并两个频道字典"""
     for category, channel_list in source.items():
         if category in target:
             target[category].extend(channel_list)
@@ -216,97 +289,105 @@ def merge_channels(target, source):
             target[category] = channel_list
 
 def is_ipv6(url):
-    # 判断URL是否为IPv6地址。
-    return re.match(r'^http:\/\/\[[0-9a-fA-F:]+\]', url) is not None
+    """判断URL是否为IPv6地址"""
+    return re.match(r'^http://\[[0-9a-fA-F:]+\]', url) is not None
 
 def updateChannelUrlsM3U(channels, template_channels):
-    # 更新频道URL到M3U和TXT文件中。
+    """更新频道URL到M3U和TXT文件中"""
     written_urls_ipv4 = set()
     written_urls_ipv6 = set()
 
     current_date = datetime.now().strftime("%Y-%m-%d")
+    # 处理公告频道
     for group in config.announcements:
         for announcement in group['entries']:
             if announcement['name'] is None:
                 announcement['name'] = current_date
 
+    # 创建输出文件
     ipv4_m3u_path = os.path.join(output_folder, "live_ipv4.m3u")
     ipv4_txt_path = os.path.join(output_folder, "live_ipv4.txt")
     ipv6_m3u_path = os.path.join(output_folder, "live_ipv6.m3u")
     ipv6_txt_path = os.path.join(output_folder, "live_ipv6.txt")
 
     with open(ipv4_m3u_path, "w", encoding="utf-8") as f_m3u_ipv4, \
-            open(ipv4_txt_path, "w", encoding="utf-8") as f_txt_ipv4, \
-            open(ipv6_m3u_path, "w", encoding="utf-8") as f_m3u_ipv6, \
-            open(ipv6_txt_path, "w", encoding="utf-8") as f_txt_ipv6:
+         open(ipv4_txt_path, "w", encoding="utf-8") as f_txt_ipv4, \
+         open(ipv6_m3u_path, "w", encoding="utf-8") as f_m3u_ipv6, \
+         open(ipv6_txt_path, "w", encoding="utf-8") as f_txt_ipv6:
 
-        f_m3u_ipv4.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
-        f_m3u_ipv6.write(f"""#EXTM3U x-tvg-url={",".join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n""")
+        # 写入文件头
+        f_m3u_ipv4.write(f"#EXTM3U x-tvg-url={','.join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n")
+        f_m3u_ipv6.write(f"#EXTM3U x-tvg-url={','.join(f'"{epg_url}"' for epg_url in config.epg_urls)}\n")
 
+        # 写入公告频道
         for group in config.announcements:
             f_txt_ipv4.write(f"{group['channel']},#genre#\n")
             f_txt_ipv6.write(f"{group['channel']},#genre#\n")
             for announcement in group['entries']:
                 url = announcement['url']
-                if is_ipv6(url):
-                    if url not in written_urls_ipv6:
-                        written_urls_ipv6.add(url)
-                        f_m3u_ipv6.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}" tvg-language="Chinese" tvg-country="CN",{announcement['name']}\n""")
-                        f_m3u_ipv6.write(f"{url}\n")
-                        f_txt_ipv6.write(f"{announcement['name']},{url}\n")
-                else:
-                    if url not in written_urls_ipv4:
-                        written_urls_ipv4.add(url)
-                        f_m3u_ipv4.write(f"""#EXTINF:-1 tvg-id="1" tvg-name="{announcement['name']}" tvg-logo="{announcement['logo']}" group-title="{group['channel']}" tvg-language="Chinese" tvg-country="CN",{announcement['name']}\n""")
-                        f_m3u_ipv4.write(f"{url}\n")
-                        f_txt_ipv4.write(f"{announcement['name']},{url}\n")
+                if url:
+                    if is_ipv6(url):
+                        if url not in written_urls_ipv6 and test_url_validity(url):
+                            written_urls_ipv6.add(url)
+                            f_m3u_ipv6.write(f"#EXTINF:-1 tvg-id=\"1\" tvg-name=\"{announcement['name']}\" tvg-logo=\"{announcement['logo']}\" group-title=\"{group['channel']}\" tvg-language=\"Chinese\" tvg-country=\"CN\",{announcement['name']}\n")
+                            f_m3u_ipv6.write(f"{url}\n")
+                            f_txt_ipv6.write(f"{announcement['name']},{url}\n")
+                    else:
+                        if url not in written_urls_ipv4 and test_url_validity(url):
+                            written_urls_ipv4.add(url)
+                            f_m3u_ipv4.write(f"#EXTINF:-1 tvg-id=\"1\" tvg-name=\"{announcement['name']}\" tvg-logo=\"{announcement['logo']}\" group-title=\"{group['channel']}\" tvg-language=\"Chinese\" tvg-country=\"CN\",{announcement['name']}\n")
+                            f_m3u_ipv4.write(f"{url}\n")
+                            f_txt_ipv4.write(f"{announcement['name']},{url}\n")
 
+        # 写入匹配的频道
         for category, channel_list in template_channels.items():
             f_txt_ipv4.write(f"{category},#genre#\n")
             f_txt_ipv6.write(f"{category},#genre#\n")
             if category in channels:
                 for channel_name in channel_list:
                     if channel_name in channels[category]:
-                        ipv4_urls = [url for url in channels[category][channel_name] if not is_ipv6(url)]
-                        ipv6_urls = [url for url in channels[category][channel_name] if is_ipv6(url)]
+                        urls = channels[category][channel_name]
+                        if not urls:
+                            continue
+                            
+                        # 分离IPv4和IPv6地址
+                        ipv4_urls = [url for url in urls if not is_ipv6(url)]
+                        ipv6_urls = [url for url in urls if is_ipv6(url)]
 
+                        # 为每个IP版本选择最佳URL
                         best_ipv4_url = get_best_url(ipv4_urls)
                         best_ipv6_url = get_best_url(ipv6_urls)
 
+                        # 写入IPv4 URL
                         if best_ipv4_url:
                             new_url = add_url_suffix(best_ipv4_url, 1, 1, "IPV4")
                             write_to_files(f_m3u_ipv4, f_txt_ipv4, category, channel_name, 1, new_url)
 
+                        # 写入IPv6 URL
                         if best_ipv6_url:
                             new_url = add_url_suffix(best_ipv6_url, 1, 1, "IPV6")
                             write_to_files(f_m3u_ipv6, f_txt_ipv6, category, channel_name, 1, new_url)
 
+        # 添加文件结束标记
         f_txt_ipv4.write("\n")
         f_txt_ipv6.write("\n")
 
-def sort_and_filter_urls(urls, written_urls):
-    # 排序和过滤URL。
-    filtered_urls = [
-        url for url in sorted(urls, key=lambda u: not is_ipv6(u) if config.ip_version_priority == "ipv6" else is_ipv6(u))
-        if url and url not in written_urls and not any(blacklist in url for blacklist in config.url_blacklist)
-    ]
-    written_urls.update(filtered_urls)
-    return filtered_urls
-
 def add_url_suffix(url, index, total_urls, ip_version):
-    # 添加URL后缀。
+    """为URL添加后缀，标识IP版本和线路号"""
     suffix = f"${ip_version}" if total_urls == 1 else f"${ip_version}•线路{index}"
     base_url = url.split('$', 1)[0] if '$' in url else url
     return f"{base_url}{suffix}"
 
 def write_to_files(f_m3u, f_txt, category, channel_name, index, new_url):
-    # 写入M3U和TXT文件。
+    """写入M3U和TXT文件"""
     logo_url = f"./pic/logos{channel_name}.png"
     f_m3u.write(f"#EXTINF:-1 tvg-id=\"{index}\" tvg-name=\"{channel_name}\" tvg-logo=\"{logo_url}\" group-title=\"{category}\" tvg-language=\"Chinese\" tvg-country=\"CN\",{channel_name}\n")
-    f_m3u.write(new_url + "\n")
+    f_m3u.write(f"{new_url}\n")
     f_txt.write(f"{channel_name},{new_url}\n")
 
 if __name__ == "__main__":
     template_file = "demo.txt"
+    logging.info("开始生成频道列表...")
     channels, template_channels = filter_source_urls(template_file)
     updateChannelUrlsM3U(channels, template_channels)
+    logging.info(f"频道列表生成完成！共处理 {sum(len(channels.get(cat, {})) for cat in template_channels)} 个频道")
