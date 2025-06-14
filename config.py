@@ -5,6 +5,8 @@ ip_version_priority = "ipv4"
 
 # 直播源URL列表
 source_urls = [
+
+    "http://kkk.888.3116598.xyz/user/HKTV.txt",
     "http://gg.7749.org/z/i/gdss.txt",
     "https://live.kakaxi-1.ink/ipv4.txt",
     "https://live.kakaxi-1.ink/ipv4.1.txt",
