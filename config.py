@@ -21,8 +21,6 @@ source_urls = [
     "https://pastebin.com/raw/V0BhYHF4",
 # 欧歌vjj
     "https://欧歌vjj.u.nxog.top/m/tv/",
-# 欧歌AI直播
-    "https://raw.githubusercontent.com/PizazzGY/TV/master/output/user_result.txt",
 # 码点影仓
     "http://mdxgh.tpddns.cn:9999/new/mdzb.txt",
 # 易看电视
@@ -40,30 +38,20 @@ source_urls = [
     "https://cnb.cool/junchao.tang/llive/-/git/raw/main/中国IPTV",
     "https://www.iyouhun.com/tv/myIPTV/ipv6.m3u",
     "https://www.iyouhun.com/tv/myIPTV/ipv4.m3u",
-    "http://live.nctv.top/x.txt",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/iptv_api/refs/heads/main/output/live_ipv4.m3u",
+    "http://live.nctv.top/x.txt",   
     "https://live.izbds.com/tv/iptv4.txt",
     "http://47.120.41.246:8899/zb.txt",
     "http://rihou.cc:555/gggg.nzk",
     "http://1.94.31.214/live/livelite.txt",
     "http://api.mytv666.top/lives/free.php?type=txt",
     "http://zhibo.feylen.top/fltv/js/ku9live.php?tpye=fl.txt",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/Alan-Alana/IPTV/refs/heads/main/channl.txt",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/peterHchina/iptv/refs/heads/main/IPTV-V4.m3u",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/peterHchina/iptv/refs/heads/main/IPTV-V6.m3u",
     "http://92.112.21.169:30000/mytv.m3u",
     "http://lisha521.dynv6.net.fh4u.org/tv.txt",
     "https://web.banye.tech:7777/tv/hlj.txt",
     "https://iptv.catvod.com/tv.m3u",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/hostemail/cdn/main/live/tv.txt",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/alantang1977/JunTV/refs/heads/main/output/result.m3u",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/ssili126/tv/main/itvlist.m3u",
     "https://live.zbds.top/tv/iptv4.txt",
     "https://gitee.com/xxy002/zhiboyuan/raw/master/dsy",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/big-mouth-cn/tv/main/iptv-ok.m3u",
-    "https://codeberg.org/alfredisme/mytvsources/raw/branch/main/mylist-ipv6.m3u",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/lalifeier/IPTV/main/m3u/IPTV.m3u",
-    "https://gh.tryxd.cn/https://raw.githubusercontent.com/wwb521/live/main/tv.m3u"
+
 
 ]
 
