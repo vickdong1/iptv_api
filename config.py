@@ -6,6 +6,11 @@ ip_version_priority = "ipv4"
 # 直播源URL列表
 source_urls = [
 
+    "http://is.is-great.org/i/9892017.txt",
+    "https://mm.qiuye.us.kg/6.txt",
+    "http://gg.7749.org//i/ds.txt",
+    "https://is.is-great.org/i/9892017.txt?i=1",
+    "http://go8.myartsonline.com/zx/0/TVBTV28.txt",
     "http://kkk.888.3116598.xyz/user/HKTV.txt",
     "http://gg.7749.org/z/i/gdss.txt",
     "https://live.kakaxi-1.ink/ipv4.txt",
