@@ -1503,10 +1503,34 @@ http://[2409:8087:2801:22:100::45]/wh7f454c46tw14778710_346869978/hwltc.tv.cdn.z
 http://[2409:8087:2001:20:2800:0:df6e:eb19]:80/ott.mobaibox.com/PLTV/3/224/3221228524/index.m3u8$IPV6•线路1
 #EXTINF:-1 tvg-id="2" tvg-name="凤凰资讯" tvg-logo="./pic/logos凤凰资讯.png" group-title="🍓┃湾区频道",凤凰资讯
 http://[2409:8087:2801:20:100::50]/wh7f454c46tw54228331_-952106546/hwltc.tv.cdn.zj.chinamobile.com/PLTV/88888888/224/3221236197/index.m3u8?icpid=88888888&RTS=1717810878&from=5&hms_devid=374&online=1717810878&vqe=3$IPV6•线路2
+#EXTINF:-1 tvg-id="1" tvg-name="TVBdrama" tvg-logo="./pic/logosTVBdrama.png" group-title="🍓┃湾区频道",TVBdrama
+http://[2409:8087:2801:22:100::4e]/wh7f454c46tw1464554619_-541402142/hwltc.tv.cdn.zj.chinamobile.com/PLTV/88888888/224/3221236208/index.m3u8?icpid=88888888&RTS=1717812289&from=5&ocs=2_2409:8087:2801:22:100::5f_80&hms_devid=313&online=1717812289&vqe=3$IPV6
 #EXTINF:-1 tvg-id="1" tvg-name="CCTV4欧洲咪咕" tvg-logo="./pic/logosCCTV4欧洲咪咕.png" group-title="🍉┃咪咕频道",CCTV4欧洲咪咕
 http://[2409:8087:2801:22:100::42]/wh7f454c46tw3242271071_-384879779/hwltc.tv.cdn.zj.chinamobile.com/PLTV/88888888/224/3221236378/index.m3u8?icpid=88888888&RTS=1717809772&from=5&hms_devid=1643&online=1717809772&vqe=3$IPV6
 #EXTINF:-1 tvg-id="1" tvg-name="CCTV4美洲咪咕" tvg-logo="./pic/logosCCTV4美洲咪咕.png" group-title="🍉┃咪咕频道",CCTV4美洲咪咕
 http://[2409:8087:2801:22:100::59]/wh7f454c46tw3276424687_-177399836/hwltc.tv.cdn.zj.chinamobile.com/PLTV/88888888/224/3221236335/index.m3u8?icpid=88888888&RTS=1717809806&from=5&ocs=2_2409:8087:2801:22:100::3a_80&hms_devid=324&online=1717809806&vqe=3$IPV6
+#EXTINF:-1 tvg-id="1" tvg-name="动作电影咪咕" tvg-logo="./pic/logos动作电影咪咕.png" group-title="🍉┃咪咕频道",动作电影咪咕
+http://[2409:8087:74d4:21::36]/270000001128/9900000106/1.m3u8$IPV6•线路1
+#EXTINF:-1 tvg-id="2" tvg-name="动作电影咪咕" tvg-logo="./pic/logos动作电影咪咕.png" group-title="🍉┃咪咕频道",动作电影咪咕
+http://[2409:8087:1a01:df::7005]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225661/index.m3u8$IPV6•线路2
+#EXTINF:-1 tvg-id="1" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:1:20:20::26]/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226532/1.m3u8?GuardEncType=2&accountinfo=%7E%7EV2.0%7E6sNSqmLCqLFl_AJPBXp1qA%7E_eNUbgU9sJGUcVVduOMKhafLvQUgE_zlz_7pvDimJNO6b4uKEI14SNy0LDiw52LH%2CEND$IPV6•线路1
+#EXTINF:-1 tvg-id="2" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:1a0a:df::4038]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225625/index.m3u8$IPV6•线路2
+#EXTINF:-1 tvg-id="3" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:74d4:21::36]/270000001128/9900000026/1.m3u8$IPV6•线路3
+#EXTINF:-1 tvg-id="4" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:5e00:24::1e]:6060/200000001898/460000089800010113/1.m3u8$IPV6•线路4
+#EXTINF:-1 tvg-id="5" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:5e00:24::1e]:6060/000000001000/1000000002000007495/1.m3u8$IPV6•线路5
+#EXTINF:-1 tvg-id="6" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:5e00:24::1e]:6060/000000001000/5000000006000040017/1.m3u8$IPV6•线路6
+#EXTINF:-1 tvg-id="7" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:1:20:20::26]/otttv.bj.chinamobile.com/PV/88888888/224/3221226532/1.m3u8?GuardEncType=2&accountinfo=%7E%7EV2.0%7E6sNSqmLCqLFl_AJPBXp1qA%7E_eNUbgU9sJGUcVVduOMKhafLvQUgE_zlz_7pvDimJNO6b4uKEI14SNy0LDiw52LH%2CEND$IPV6•线路7
+#EXTINF:-1 tvg-id="8" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:5e01:34::22]:6610/ZTE_CMS/00000001000000060000000000000313/index.m3u8?IAS$IPV6•线路8
+#EXTINF:-1 tvg-id="9" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:2801:22:100::5f]/wh7f454c46tw819721924_-1060422627/hwltc.tv.cdn.zj.chinamobile.com/PLTV/88888888/224/3221236201/index.m3u8?icpid=88888888&RTS=1717811644&from=5&ocs=2_2409:8087:2801:22:100::42_80&hms_devid=319&online=1717811644&vqe=3$IPV6•线路9
 #EXTINF:-1 tvg-id="1" tvg-name="黑莓动画" tvg-logo="./pic/logos黑莓动画.png" group-title="🐟┃少儿频道",黑莓动画
 http://[2409:8087:74d4:21::36]/270000001128/9900000096/1.m3u8$IPV6•线路1
 #EXTINF:-1 tvg-id="2" tvg-name="黑莓动画" tvg-logo="./pic/logos黑莓动画.png" group-title="🐟┃少儿频道",黑莓动画
