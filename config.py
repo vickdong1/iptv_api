@@ -5,7 +5,12 @@ ip_version_priority = "ipv4"
 
 # 直播源URL列表
 source_urls = [
-
+    "https://cnb.cool/junchao.tang/live/-/git/raw/main/%E5%85%A8%E7%90%83%E9%80%9A.py",
+    "http://kds.shanxixr.com/migu01.txt",
+    "http://is.is-great.org/i/0885557.txt",
+    "https://115.190.105.236/vip/qwt.m3u",
+    "https://115.190.105.236/vip/vip.m3u",
+    "https://live.catvod.com/mq.php?catvod.com=m3u",
     "http://is.is-great.org/i/9892017.txt",
     "https://mm.qiuye.us.kg/6.txt",
     "http://gg.7749.org//i/ds.txt",
@@ -16,29 +21,6 @@ source_urls = [
     "https://live.kakaxi-1.ink/ipv4.txt",
     "https://live.kakaxi-1.ink/ipv4.1.txt",
     "https://gh.tryxd.cn/https://raw.githubusercontent.com/iodata999/frxz751113-IPTVzb1/refs/heads/main/结果.m3u",
-# 月光宝盒
-    "https://ygbh.site/bh.txt",
-# NEW直播
-    "https://raw.githubusercontent.com/chuzjie/wuihui/main/小米/DSJ240101.txt",
-# 七星itv
-    "https://gitlab.com/tvkj/loong/-/raw/main/loog.txt",
-# 野火LIVE
-    "https://pastebin.com/raw/V0BhYHF4",
-# 欧歌vjj
-    "https://欧歌vjj.u.nxog.top/m/tv/",
-# 码点影仓
-    "http://mdxgh.tpddns.cn:9999/new/mdzb.txt",
-# 易看电视
-    "http://117.72.68.25:9230/latest.txt",
-# 海燕直播
-    "https://chuxinya.top/f/AD5QHE/%E6%B5%B7%E7%87%95.txt",
-# 乘风TV-1.0.0-002
-    "http://file.91kds.cn/tvlist/2025030711/kds_all_lnyd.txt",
-# 拾光ITV
-    "https://4708.kstore.space/svip/ITV.txt",
-# 小苹果，蜗牛线路[测试2]
-    "http://wp.wadg.pro/down.php/d7b52d125998d00e2d2339bac6abd2b5.txt",
-# 电视家9.0-2025
     "http://8.138.7.223/2025.txt",
     "https://cnb.cool/junchao.tang/llive/-/git/raw/main/中国IPTV",
     "https://www.iyouhun.com/tv/myIPTV/ipv6.m3u",
