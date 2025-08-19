@@ -20,7 +20,7 @@ source_urls = [
     "http://gg.7749.org/z/i/gdss.txt",
     "https://live.kakaxi-1.ink/ipv4.txt",
     "https://live.kakaxi-1.ink/ipv4.1.txt",
-    "https://gh.catmak.name/https://raw.githubusercontent.com/iodata999/frxz751113-IPTVzb1/refs/heads/main/结果.m3u",
+    "https://raw.githubusercontent.com/iodata999/frxz751113-IPTVzb1/refs/heads/main/结果.m3u",
     "http://8.138.7.223/2025.txt",
     "https://cnb.cool/junchao.tang/llive/-/git/raw/main/中国IPTV",
     "https://www.iyouhun.com/tv/myIPTV/ipv6.m3u",
@@ -80,8 +80,8 @@ announcements = [
         "entries": [
             {
                 "name": None,
-                "url": "https://gh.catmak.name/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/Robot.mp4",
-                "logo": "https://gh.catmak.name/https://raw.githubusercontent.com/alantang1977/X/main/Pictures/SuperMAN.png"
+                "url": "https://raw.githubusercontent.com/alantang1977/X/main/Pictures/Robot.mp4",
+                "logo": "https://raw.githubusercontent.com/alantang1977/X/main/Pictures/SuperMAN.png"
             }
         ]
     }
