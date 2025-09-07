@@ -97,6 +97,8 @@ http://[2409:8087:1a15:10d1::39]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/322
 http://[2409:8087:1a15:10d1::38]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225660/index.m3u8$IPV6
 #EXTINF:-1 tvg-id="1" tvg-name="延边卫视" tvg-logo="./pic/logos延边卫视.png" group-title="🥭┃卫视频道",延边卫视
 http://[2409:8087:1a15:10d1::39]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226516/index.m3u8$IPV6
+#EXTINF:-1 tvg-id="1" tvg-name="陕西卫视咪咕" tvg-logo="./pic/logos陕西卫视咪咕.png" group-title="🍉┃咪咕频道",陕西卫视咪咕
+http://[2409:8087:1a15:10d1::37]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225625/index.m3u8$IPV6
 #EXTINF:-1 tvg-id="1" tvg-name="卡酷少儿" tvg-logo="./pic/logos卡酷少儿.png" group-title="🐟┃少儿频道",卡酷少儿
 http://[2409:8087:1a15:10d1::33]/ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225654/index.m3u8$IPV6
 #EXTINF:-1 tvg-id="1" tvg-name="哈哈炫动" tvg-logo="./pic/logos哈哈炫动.png" group-title="🐟┃少儿频道",哈哈炫动
